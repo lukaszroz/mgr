@@ -3,6 +3,7 @@ package edu.agh.lroza
 import akka.actor.Actor._
 import java.util.Scanner
 import java.util.concurrent.atomic.AtomicBoolean
+import akka.actor.Actor
 
 class Client extends Runnable {
 
@@ -20,7 +21,7 @@ object Client extends App {
 
   val run = new AtomicBoolean(true)
   spawn{
-    while(run) {
+    while(run.get) {
       println("[Client] Got: " + (actor ? "Hello").as[String])
       Thread.sleep(1000)
     }
@@ -29,4 +30,5 @@ object Client extends App {
   val sc = new Scanner(System.in);
   while (sc.nextLine() != "") {}
   run.set(false)
+  Actor.registry.shutdownAll()
 }

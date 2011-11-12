@@ -3,6 +3,7 @@ package edu.agh.lroza
 import akka.actor.Actor._
 import java.io.{InputStreamReader, BufferedReader}
 import java.util.Scanner
+import akka.actor.Actor
 
 class PingServer {
 
@@ -20,5 +21,6 @@ object PingServer {
     val sc = new Scanner(System.in);
     while (sc.nextLine() != "") {}
     server.shutdown()
+    Actor.registry.shutdownAll()
   }
 }
