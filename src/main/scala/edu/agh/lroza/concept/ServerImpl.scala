@@ -17,7 +17,7 @@ class ServerImpl extends Server {
     var sum = 0
     val iterator = set.iterator()
     while (iterator.hasNext) {
-      Thread.sleep(1)
+      Thread.sleep(10)
       sum += iterator.next()
     }
     sum
