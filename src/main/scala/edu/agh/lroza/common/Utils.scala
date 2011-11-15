@@ -11,7 +11,7 @@ object Utils {
 
   def start[T: ClassManifest]() {
     remote.start("localhost", port)
-    remote.registerTypedActor("server", TypedActor.newInstance(classOf[Server], classManifest[T].erasure))
+//    remote.registerTypedActor("server", TypedActor.newInstance(classOf[Server], classManifest[T].erasure))
   }
 
   def stop() {
