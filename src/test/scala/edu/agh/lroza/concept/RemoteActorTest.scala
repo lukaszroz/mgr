@@ -1,28 +1,22 @@
 package edu.agh.lroza.concept
 
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
-import org.mockito.Mockito._
-import akka.actor.{Actor, ActorRef}
-import Actor._
+import akka.actor.Actor
 import java.util.ConcurrentModificationException
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfter, FunSuite}
+import akka.dispatch.Future
 
-class RemoteActorTest extends FunSuite with MockitoSugar with BeforeAndAfter with ShouldMatchers {
+class RemoteActorTest extends FunSuite with MockitoSugar with BeforeAndAfter with ShouldMatchers with BeforeAndAfterAll {
 
   test("should cause exception") {
     val server = new ServerImpl
-    var serverActor: ActorRef = Actor.actorOf(ServerActor(server)).start()
+    Utils.start(server)
+    var serverClient = Utils.getClient
 
-    val port = 2552
-    remote.start("localhost", port)
-    remote.register("server", serverActor)
-
-    var serverClient = new ServerClient(remote.actorFor("server", "localhost", port))
-
-    Actor.spawn {
+    Future {
       for (i <- 1 to 10)
-        Actor.spawn {
+        Future {
           serverClient.remove()
         }
     }
@@ -31,8 +25,7 @@ class RemoteActorTest extends FunSuite with MockitoSugar with BeforeAndAfter wit
     }
   }
 
-  after {
-    remote.shutdown()
-    Actor.registry.shutdownAll()
+  override def afterAll() {
+    Utils.stop()
   }
 }

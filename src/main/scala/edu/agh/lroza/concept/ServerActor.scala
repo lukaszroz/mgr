@@ -14,18 +14,15 @@ class ServerActor(server: Server) extends Actor {
       Future {
         server.remove()
       } onComplete {
-        _.value.get.fold(channel.!(_),channel.!(_))
+        _.value.get.fold(channel ! _,channel ! _)
       }
-      //      Future {
-      //        channel ! server.remove()
-      //      }
     }
     case Iterate => {
       val channel = self.channel
       Future {
         server.iterate()
       } onComplete {
-        _.value.get.fold(channel.!(_),channel.!(_))
+        _.value.get.fold(channel ! _,channel ! _)
       }
     }
   }
