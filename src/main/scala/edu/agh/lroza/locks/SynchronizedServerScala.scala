@@ -24,6 +24,6 @@ class SynchronizedServerScala {
 
 object SynchronizedServerScala {
   def main(args: Array[String]) {
-    run[SynchronizedServerScala]()
+//    run[SynchronizedServerScala]()
   }
 }

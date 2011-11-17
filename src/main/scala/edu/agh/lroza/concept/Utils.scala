@@ -9,10 +9,8 @@ object Utils {
   val port = 2552
 
   def start(server: Server) {
-    var serverActor: ActorRef = Actor.actorOf(ServerActor(server)).start()
-
     remote.start("localhost", port)
-    remote.register("server", serverActor)
+    remote.register("server", Actor.actorOf(ServerActor(server)))
   }
 
   def stop() {
