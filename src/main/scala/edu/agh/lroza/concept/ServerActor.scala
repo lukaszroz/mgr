@@ -1,7 +1,7 @@
 package edu.agh.lroza.concept
 
-import akka.actor.Actor
 import akka.dispatch.Future
+import akka.actor.{UntypedChannel, Actor}
 
 case object Remove
 
@@ -10,21 +10,19 @@ case object Iterate
 class ServerActor(server: Server) extends Actor {
   protected def receive = {
     case Remove => {
-      val channel = self.channel
-      Future {
-        server.remove()
-      } onComplete {
-        _.value.get.fold(channel ! _,channel ! _)
-      }
+      future[Int](server.remove(), self.channel)
     }
     case Iterate => {
-      val channel = self.channel
-      Future {
-        server.iterate()
-      } onComplete {
-        _.value.get.fold(channel ! _,channel ! _)
-      }
+      future[Int](server.iterate(), self.channel)
     }
+  }
+
+  private def future[T](code: => T, channel:UntypedChannel) = {
+      Future {
+        code
+      } onComplete {
+        _.value.get.fold(channel ! _, channel ! _)
+      }
   }
 }
 

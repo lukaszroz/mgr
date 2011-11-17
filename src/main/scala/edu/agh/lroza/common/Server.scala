@@ -7,7 +7,7 @@ trait Server {
 
   def listTopics():Iterable[String]
 
-  def logout(token: UUID)
+  def logout(token: UUID):Boolean
 }
 
 
