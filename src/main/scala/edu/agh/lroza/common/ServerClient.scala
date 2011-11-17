@@ -14,10 +14,9 @@ class ServerClient(server: ActorRef) extends Server {
     case e: Exception => throw e
   }
 
-  def logout(token: UUID) = {
-    (server ? Logout(token)).get match {
-      case b: Boolean => b
-      case e: Exception => throw e
-    }
+  def logout(token: UUID) = (server ? Logout(token)).get match {
+    case b: Boolean => b
+    case e: Exception => throw e
   }
+
 }

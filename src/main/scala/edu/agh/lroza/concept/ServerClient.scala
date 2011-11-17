@@ -3,13 +3,14 @@ package edu.agh.lroza.concept
 import akka.actor.ActorRef
 
 class ServerClient(server: ActorRef) extends Server {
-  def remove() = (server ? Remove).get match {
-    case i: Int => i
-    case e: Exception => throw e
-  }
+  def remove() = sendAndGet(Remove)
 
-  def iterate() = (server ? Iterate).get match {
-    case i: Int => i
-    case e: Exception => throw e
+  def iterate() = sendAndGet(Iterate)
+
+  private def sendAndGet(message: Any) = {
+    (server ? message).get match {
+      case o: Int => o
+      case e: Exception => throw e
+    }
   }
 }
