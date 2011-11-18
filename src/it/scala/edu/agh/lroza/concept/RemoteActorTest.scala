@@ -2,7 +2,6 @@ package edu.agh.lroza.concept
 
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.matchers.ShouldMatchers
-import akka.actor.Actor
 import java.util.ConcurrentModificationException
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfter, FunSuite}
 import akka.dispatch.Future

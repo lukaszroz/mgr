@@ -1,12 +1,8 @@
 package edu.agh.lroza.concept;
 
-import akka.actor.Actors;
-import akka.actor.UntypedActor;
-import akka.actor.UntypedActorFactory;
 import akka.dispatch.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ConcurrentModificationException;
@@ -19,6 +15,7 @@ public class RemoteActorTestJ {
     @BeforeClass
     public static void init() {
         ServerImplJ server = new ServerImplJ();
+        System.err.println("Starting server....");
         Utils.start(server);
     }
 

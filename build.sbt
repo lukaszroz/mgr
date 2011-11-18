@@ -17,9 +17,9 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+parallelExecution in IntegrationTest := false
+
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "1.6.1" % "test",
-  "com.novocode" % "junit-interface" % "0.7" % "test->default",
   "se.scalablesolutions.akka" % "akka-remote" % "1.2",
   "se.scalablesolutions.akka" % "akka-typed-actor" % "1.2",
   "org.mockito" % "mockito-core" % "1.8.5"
