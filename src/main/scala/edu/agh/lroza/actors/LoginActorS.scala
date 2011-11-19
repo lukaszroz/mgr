@@ -7,7 +7,7 @@ import edu.agh.lroza.common.{Logout, Login}
 
 case class IsLogged(token: UUID);
 
-class LoginActor extends Actor {
+class LoginActorS extends Actor {
   val loggedUsers = Map[UUID, String]()
 
   def login(username: String, password: String) = {
@@ -28,8 +28,8 @@ class LoginActor extends Actor {
   }
 
   protected def receive = {
+    case IsLogged(token) => self reply loggedUsers.contains(token)
     case Login(username, password) => self reply login(username, password)
     case Logout(token) => self reply logout(token)
-    case IsLogged(token) => self reply loggedUsers.contains(token)
   }
 }

@@ -1,5 +1,5 @@
-import edu.agh.lroza.actors.LoginActor
+import edu.agh.lroza.actors.LoginActorS
 
 object HelloWorld extends App {
-  println(classOf[LoginActor].getName)
+  println(classOf[LoginActorS].getName)
 }

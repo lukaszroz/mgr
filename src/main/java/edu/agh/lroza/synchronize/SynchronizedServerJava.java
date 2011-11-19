@@ -20,8 +20,9 @@ public class SynchronizedServerJava implements Server {
             UUID token = UUID.randomUUID();
             loggedUsers.put(token, username);
             return scala.Some.apply(token);
+        } else {
+            return Option.empty();
         }
-        return scala.Option.empty();
     }
 
     public boolean logout(UUID token) {

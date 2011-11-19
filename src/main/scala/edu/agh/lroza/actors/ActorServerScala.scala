@@ -5,8 +5,8 @@ import akka.actor.Actor
 import edu.agh.lroza.common._
 
 class ActorServerScala extends Server {
-  val loginActor = Actor.actorOf[LoginActor].start()
-  val topicsActor = Actor.actorOf[TopicsActor].start()
+  val loginActor = Actor.actorOf[LoginActorS].start()
+  val topicsActor = Actor.actorOf[TopicsActorS].start()
 
   def login(username: String, password: String) = (loginActor ? Login(username, password)).as[Option[UUID]] match {
     case Some(answer) => answer

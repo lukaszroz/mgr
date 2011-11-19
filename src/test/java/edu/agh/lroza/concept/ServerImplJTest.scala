@@ -9,7 +9,8 @@ class ServerImplJTest extends FunSuite {
   test("should cause exception") {
     val server = new ServerImplJ
     Future {
-      for (i <- 1 to 100)
+      Thread.sleep(10)
+      for (i <- 1 to 10)
         Future {
           server.remove()
         }

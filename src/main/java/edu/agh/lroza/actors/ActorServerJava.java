@@ -1,41 +1,27 @@
 package edu.agh.lroza.actors;
 
-import edu.agh.lroza.common.Problem;
-import edu.agh.lroza.common.Server;
+import akka.actor.ActorRef;
+import akka.actor.Actors;
+import edu.agh.lroza.common.*;
 import scala.Either;
-import scala.Left;
 import scala.Option;
-import scala.Right;
-import scala.collection.JavaConversions;
 
-import java.util.*;
+import java.util.UUID;
 
 public class ActorServerJava implements Server {
-    private Map<UUID, String> loggedUsers = Collections.synchronizedMap(new HashMap<UUID, String>());
+    ActorRef loginActor = Actors.actorOf(LoginActorJ.class).start();
+    ActorRef topicsActor = Actors.actorOf(TopicsActorJ.class).start();
+
 
     public Option<UUID> login(String username, String password) {
-        if (username.equals(password)) {
-            UUID token = UUID.randomUUID();
-            loggedUsers.put(token, username);
-            return scala.Some.apply(token);
-        }
-        return scala.Option.empty();
+        return (Option<UUID>) loginActor.ask(new Login(username, password)).get();
     }
 
     public boolean logout(UUID token) {
-        String remove = loggedUsers.remove(token);
-        if (remove == null)
-            return false;
-        else
-            return true;
+        return (boolean) loginActor.ask(new Logout(token)).get();
     }
 
     public Either<Problem, scala.collection.Iterable<String>> listTopics(UUID token) {
-        if (loggedUsers.containsKey(token)) {
-            scala.collection.Iterable<String> iterable = JavaConversions.iterableAsScalaIterable(new ArrayList<String>());
-            return new Right<Problem, scala.collection.Iterable<String>>(iterable);
-        } else {
-            return new Left<Problem, scala.collection.Iterable<String>>(new Problem("Please log in"));
-        }
+        return (Either<Problem, scala.collection.Iterable<String>>) topicsActor.ask(new ListTopics(token)).get();
     }
 }

@@ -4,9 +4,9 @@ import akka.actor.Actor
 import java.util.UUID
 import edu.agh.lroza.common.{Problem, ListTopics}
 
-class TopicsActor extends Actor {
+class TopicsActorS extends Actor {
   val topics = List[String]()
-  val loginActor = Actor.registry.actorsFor(classOf[LoginActor])(0)
+  val loginActor = Actor.registry.actorsFor(classOf[LoginActorS])(0)
 
   def listTopics(token: UUID) = {
     Either.cond(isLogged(token), topics, Problem("Please log in"))
