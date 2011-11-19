@@ -4,19 +4,18 @@ import akka.actor.ActorRef
 import java.util.UUID
 
 class ServerClient(server: ActorRef) extends Server {
-  def login(username: String, password: String) = (server ? Login(username, password)).get match {
-    case s: Some[UUID] => s
-    case e: Exception => throw e
+  def login(username: String, password: String) = (server ? Login(username, password)).as[Some[UUID]] match {
+    case Some(answer) => answer
+    case None => None
   }
 
-  def listTopics(token: UUID) = (server ? ListTopics(token)).get match {
-    case e: Either[Problem, Iterable[String]] => e
-    case e: Exception => throw e
+  def listTopics(token: UUID) = (server ? ListTopics(token)).as[Either[Problem, Iterable[String]]] match {
+    case Some(answer) => answer
+    case None => Left(Problem("Timeout occured"))
   }
 
-  def logout(token: UUID) = (server ? Logout(token)).get match {
-    case b: Boolean => b
-    case e: Exception => throw e
+  def logout(token: UUID) = (server ? Logout(token)).as[Boolean] match {
+    case Some(b) => b
+    case None => false
   }
-
 }
