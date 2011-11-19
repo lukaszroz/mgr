@@ -18,21 +18,21 @@ class ServerClientTest extends FunSuite with MockitoSugar with BeforeAndAfter wi
   }
 
   test("login should call server object") {
-    when(server.login("a","b")).thenReturn(uuid)
+    when(server.login("a", "b")).thenReturn(Some(uuid))
     val uuid1 = serverClient.login("a", "b")
-    uuid1 should equal (uuid)
+    uuid1.get should equal(uuid)
     verify(server).login("a", "b")
   }
 
   test("logout should call server object") {
     when(server.logout(uuid)).thenReturn(true)
-    serverClient.logout(uuid) should equal (true)
+    serverClient.logout(uuid) should equal(true)
     verify(server).logout(uuid)
   }
 
   test("list should call server object") {
-    when(server.listTopics()).thenReturn(Iterable[String]())
-    serverClient.listTopics() should equal (Iterable[String]())
-    verify(server).listTopics()
+    when(server.listTopics(null)).thenReturn(Right(Iterable[String]()))
+    serverClient.listTopics(null) should equal(Right(Iterable[String]()))
+    verify(server).listTopics(null)
   }
 }

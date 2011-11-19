@@ -10,7 +10,7 @@ import java.util.UUID
 
 class ServerActorTest extends FunSuite with MockitoSugar with BeforeAndAfter with ShouldMatchers {
   val server = mock[Server]
-  var serverActor:ActorRef = Actor.actorOf(ServerActor(server))
+  var serverActor: ActorRef = Actor.actorOf(ServerActor(server))
 
   before {
     reset(server)
@@ -29,8 +29,8 @@ class ServerActorTest extends FunSuite with MockitoSugar with BeforeAndAfter wit
   }
 
   test("list should call server object") {
-    (serverActor ? ListTopics).get
-    verify(server).listTopics()
+    (serverActor ? ListTopics(null)).get
+    verify(server).listTopics(null)
   }
 
   after {

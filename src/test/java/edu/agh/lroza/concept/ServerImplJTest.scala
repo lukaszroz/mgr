@@ -1,7 +1,6 @@
 package edu.agh.lroza.concept
 
 import org.scalatest.FunSuite
-import akka.actor.Actor
 import java.util.ConcurrentModificationException
 import akka.dispatch.Future
 

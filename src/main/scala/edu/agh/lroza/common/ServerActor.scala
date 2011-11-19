@@ -8,7 +8,7 @@ case class Login(username: String, password: String)
 
 case class Logout(token: UUID)
 
-case object ListTopics
+case class ListTopics(token: UUID)
 
 class ServerActor(server: Server) extends Actor {
   protected def receive = {
@@ -18,8 +18,8 @@ class ServerActor(server: Server) extends Actor {
     case Logout(token) => {
       future(server.logout(token), self.channel)
     }
-    case ListTopics => {
-      future(server.listTopics(), self.channel)
+    case ListTopics(token) => {
+      future(server.listTopics(token), self.channel)
     }
   }
 
