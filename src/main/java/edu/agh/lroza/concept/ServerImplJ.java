@@ -10,7 +10,7 @@ class ServerImplJ implements Server {
     private Random random = new Random(System.currentTimeMillis());
 
     ServerImplJ() {
-        for (int i = 1; i <= 1000; i++)
+        for (int i = 1; i <= 10000; i++)
             set.add(i);
     }
 
