@@ -3,7 +3,9 @@ package edu.agh.lroza.synchronize;
 import edu.agh.lroza.common.Problem;
 import edu.agh.lroza.common.Server;
 import scala.Either;
+import scala.Left;
 import scala.Option;
+import scala.Right;
 import scala.collection.Iterable;
 import scala.collection.JavaConversions;
 
@@ -31,8 +33,11 @@ public class SynchronizedServerJava implements Server {
     }
 
     public Either<Problem, Iterable<String>> listTopics(UUID token) {
-        Iterable<String> iterable = JavaConversions.iterableAsScalaIterable(new ArrayList<String>());
-//        return Either.cond(loggedUsers.containsKey(token), iterable, new Problem("Please log in"));
-        return null;
+        if (loggedUsers.containsKey(token)) {
+            Iterable<String> iterable = JavaConversions.iterableAsScalaIterable(new ArrayList<String>());
+            return new Right<Problem, Iterable<String>>(iterable);
+        } else {
+            return new Left<Problem, Iterable<String>>(new Problem("Please log in"));
+        }
     }
 }
