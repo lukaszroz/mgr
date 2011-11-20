@@ -33,6 +33,21 @@ class ServerActorTest extends FunSuite with MockitoSugar with BeforeAndAfter wit
     verify(server).listTopics(null)
   }
 
+  test("addTopic should call server object") {
+    (serverActor ? AddTopic(null, null, null)).get
+    verify(server).addTopic(null, null, null)
+  }
+
+  test("getTopic should call server object") {
+    (serverActor ? GetTopic(null, null)).get
+    verify(server).getTopic(null, null)
+  }
+
+  test("updateTopic should call server object") {
+    (serverActor ? UpdateTopic(null, null, null)).get
+    verify(server).updateTopic(null, null, null)
+  }
+
   after {
     serverActor.stop()
   }
