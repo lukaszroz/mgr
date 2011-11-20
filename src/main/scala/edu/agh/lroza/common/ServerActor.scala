@@ -10,6 +10,12 @@ case class Logout(token: UUID)
 
 case class ListTopics(token: UUID)
 
+case class AddTopic(token: UUID, title: String, message: String)
+
+case class GetTopic(token: UUID, title: String)
+
+case class UpdateTopic(token: UUID, oldTitle: String, newTitle: String)
+
 class ServerActor(server: Server) extends Actor {
   protected def receive = {
     case Login(username, password) => {
@@ -20,6 +26,15 @@ class ServerActor(server: Server) extends Actor {
     }
     case ListTopics(token) => {
       future(server.listTopics(token), self.channel)
+    }
+    case AddTopic(token, title, message) => {
+      future(server.addTopic(token, title, message), self.channel)
+    }
+    case GetTopic(token, title) => {
+      future(server.getTopic(token, title), self.channel)
+    }
+    case UpdateTopic(token, oldTitle, newTitle) => {
+      future(server.updateTopic(token, oldTitle, newTitle), self.channel)
     }
   }
 

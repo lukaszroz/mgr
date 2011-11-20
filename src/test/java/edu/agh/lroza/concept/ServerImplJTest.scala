@@ -6,7 +6,7 @@ import akka.dispatch.Future
 
 class ServerImplJTest extends FunSuite {
 
-  test("should cause exception") {
+  ignore("should cause exception") {
     val server = new ServerImplJ
     Future {
       Thread.sleep(10)

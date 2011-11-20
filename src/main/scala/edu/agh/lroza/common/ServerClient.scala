@@ -18,4 +18,20 @@ class ServerClient(server: ActorRef) extends Server {
     case Some(b) => b
     case None => false
   }
+
+  def addTopic(token: UUID, title: String, message: String) = (server ? AddTopic(token, title, message)).as[Either[Problem, Topic]] match {
+    case Some(answer) => answer
+    case None => Left(Problem("Timeout occured"))
+  }
+
+  def getTopic(token: UUID, title: String) = (server ? GetTopic(token, title)).as[Either[Problem, Topic]] match {
+    case Some(answer) => answer
+    case None => Left(Problem("Timeout occured"))
+  }
+
+  def updateTopic(token: UUID, oldTitle: String, newTitle: String) = (server ? UpdateTopic(token, oldTitle, newTitle))
+    .as[Either[Problem, Topic]] match {
+    case Some(answer) => answer
+    case None => Left(Problem("Timeout occured"))
+  }
 }
