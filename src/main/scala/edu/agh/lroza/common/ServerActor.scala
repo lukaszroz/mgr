@@ -14,7 +14,7 @@ case class AddTopic(token: UUID, title: String, message: String)
 
 case class GetTopic(token: UUID, title: String)
 
-case class UpdateTopic(token: UUID, oldTitle: String, newTitle: String)
+case class UpdateTopicTitle(token: UUID, oldTitle: String, newTitle: String)
 
 case class DeleteTopic(token: UUID, title: String)
 
@@ -35,8 +35,8 @@ class ServerActor(server: Server) extends Actor {
     case GetTopic(token, title) => {
       future(server.getTopic(token, title), self.channel)
     }
-    case UpdateTopic(token, oldTitle, newTitle) => {
-      future(server.updateTopic(token, oldTitle, newTitle), self.channel)
+    case UpdateTopicTitle(token, oldTitle, newTitle) => {
+      future(server.updateTopicTitle(token, oldTitle, newTitle), self.channel)
     }
     case DeleteTopic(token, title) => {
       future(server.deleteTopic(token, title), self.channel)

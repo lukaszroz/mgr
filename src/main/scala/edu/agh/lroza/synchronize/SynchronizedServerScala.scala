@@ -49,7 +49,7 @@ class SynchronizedServerScala extends Server {
     }
   }
 
-  def updateTopic(token: UUID, oldTitle: String, newTitle: String) = {
+  def updateTopicTitle(token: UUID, oldTitle: String, newTitle: String) = {
     checkIfLoggedAndDo(token) {
       topics.synchronized {
         if (!topics.contains(oldTitle)) {

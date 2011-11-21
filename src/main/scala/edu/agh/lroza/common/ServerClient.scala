@@ -29,7 +29,7 @@ class ServerClient(server: ActorRef) extends Server {
     case None => Left(Problem("Timeout occured"))
   }
 
-  def updateTopic(token: UUID, oldTitle: String, newTitle: String) = (server ? UpdateTopic(token, oldTitle, newTitle))
+  def updateTopicTitle(token: UUID, oldTitle: String, newTitle: String) = (server ? UpdateTopicTitle(token, oldTitle, newTitle))
     .as[Either[Problem, Topic]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))

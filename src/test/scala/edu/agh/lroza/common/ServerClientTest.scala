@@ -52,8 +52,8 @@ class ServerClientTest extends FunSuite with MockitoSugar with BeforeAndAfter wi
 
   test("updateTopic should call server object") {
     val topic = Right(Topic(""))
-    when(server.updateTopic(null, null, null)).thenReturn(topic)
-    serverClient.updateTopic(null, null, null) should equal(topic)
-    verify(server).updateTopic(null, null, null)
+    when(server.updateTopicTitle(null, null, null)).thenReturn(topic)
+    serverClient.updateTopicTitle(null, null, null) should equal(topic)
+    verify(server).updateTopicTitle(null, null, null)
   }
 }

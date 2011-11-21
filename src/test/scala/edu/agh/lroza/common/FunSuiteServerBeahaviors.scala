@@ -68,10 +68,10 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       //should return Problem when asked for Topic not present
       server.getTopic(token, secondTitle) should be('left)
 
-      topic = server.updateTopic(token, title, secondTitle)
+      topic = server.updateTopicTitle(token, title, secondTitle)
       topic should be('right)
       //should not be able to update when there is no such title
-      server.updateTopic(token, title, secondTitle) should be('left)
+      server.updateTopicTitle(token, title, secondTitle) should be('left)
 
       server.listTopics(token).right.get sameElements Iterable(secondTitle) should be(true)
       server.getTopic(token, secondTitle).right.get should equal(topic.right.get)
@@ -79,7 +79,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       server.addTopic(token, title, message) should be('right)
       server.listTopics(token).right.get sameElements Iterable(secondTitle, title) should be(true)
       //should not be able to change title to existing one
-      server.updateTopic(token, title, secondTitle) should be('left)
+      server.updateTopicTitle(token, title, secondTitle) should be('left)
 
       //should be able to delete topic
       server.deleteTopic(token, title) should equal(true)
@@ -94,7 +94,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       server.logout(token)
       server.addTopic(token, secondTitle, message) should be('left)
       server.getTopic(token, title) should be('left)
-      server.updateTopic(token, title, secondTitle) should be('left)
+      server.updateTopicTitle(token, title, secondTitle) should be('left)
       server.deleteTopic(token, title) should be(false)
     }
   }
