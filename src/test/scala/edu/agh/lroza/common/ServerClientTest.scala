@@ -31,8 +31,8 @@ class ServerClientTest extends FunSuite with MockitoSugar with BeforeAndAfter wi
   }
 
   test("list should call server object") {
-    when(server.listTopics(null)).thenReturn(Right(Iterable[String]()))
-    serverClient.listTopics(null) should equal(Right(Iterable[String]()))
+    when(server.listTopics(null)).thenReturn(Right(Set[String]()))
+    serverClient.listTopics(null) should equal(Right(Set[String]()))
     verify(server).listTopics(null)
   }
 

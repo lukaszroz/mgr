@@ -1,7 +1,7 @@
 package edu.agh.lroza.common
 
-class Topic private(messages: Iterable[Message]);
+class Topic private(messages: List[Message]);
 
 object Topic {
-  def apply(message: String) = new Topic(Iterable(Message(message)))
+  def apply(message: String) = new Topic(List(Message(message)))
 }

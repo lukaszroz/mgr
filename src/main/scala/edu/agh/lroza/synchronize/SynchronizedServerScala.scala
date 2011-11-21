@@ -21,7 +21,7 @@ class SynchronizedServerScala extends Server {
 
   def listTopics(token: UUID) = {
     checkIfLoggedAndDo(token) {
-      Right(topics.keys)
+      Right(topics.keySet)
     }
   }
 

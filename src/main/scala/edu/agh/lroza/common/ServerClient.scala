@@ -9,7 +9,7 @@ class ServerClient(server: ActorRef) extends Server {
     case None => None
   }
 
-  def listTopics(token: UUID) = (server ? ListTopics(token)).as[Either[Problem, Iterable[String]]] match {
+  def listTopics(token: UUID) = (server ? ListTopics(token)).as[Either[Problem, Set[String]]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }

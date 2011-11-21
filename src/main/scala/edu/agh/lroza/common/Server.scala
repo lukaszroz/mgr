@@ -1,6 +1,7 @@
 package edu.agh.lroza.common
 
 import java.util.UUID
+import scala.collection.Set
 
 case class Problem(message: String);
 
@@ -9,7 +10,7 @@ trait Server {
 
   def logout(token: UUID): Boolean
 
-  def listTopics(token: UUID): Either[Problem, Iterable[String]]
+  def listTopics(token: UUID): Either[Problem, Set[String]]
 
   def addTopic(token: UUID, title: String, message: String): Either[Problem, Topic]
 
