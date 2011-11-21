@@ -16,4 +16,6 @@ trait Server {
   def getTopic(uuid: UUID, s: String): Either[Problem, Topic]
 
   def updateTopic(token: UUID, oldTitle: String, newTitle: String): Either[Problem, Topic]
+
+  def deleteTopic(uuid: UUID, title: String): Boolean
 }

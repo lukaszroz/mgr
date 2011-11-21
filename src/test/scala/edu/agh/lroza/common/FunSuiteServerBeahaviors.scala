@@ -45,7 +45,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
     }
   }
 
-  def topicsListManagement(serverFactory: => Server) {
+  def topicsManagement(serverFactory: => Server) {
     test("should be able to add, get, update and remove topic") {
       val server = serverFactory
       val title = "title"
@@ -53,6 +53,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       val message = "message"
 
       val token = server.login("a", "a").get
+      //should be able to add topic
       var topic = server.addTopic(token, title, message)
       topic should be('right)
 
@@ -61,7 +62,9 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
 
       server.listTopics(token).right.get sameElements Iterable(title) should be(true)
 
+      //should be able to get topic
       server.getTopic(token, title).right.get should equal(topic.right.get)
+
       //should return Problem when asked for Topic not present
       server.getTopic(token, secondTitle) should be('left)
 
@@ -77,6 +80,22 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       server.listTopics(token).right.get sameElements Iterable(secondTitle, title) should be(true)
       //should not be able to change title to existing one
       server.updateTopic(token, title, secondTitle) should be('left)
+
+      //should be able to delete topic
+      server.deleteTopic(token, title) should equal(true)
+      server.deleteTopic(token, secondTitle) should equal(true)
+      server.listTopics(token).right.get sameElements Set() should be(true)
+
+      //shouldn't be able to delete when there is no topic
+      server.deleteTopic(token, title) should equal(false)
+
+      //tests after logout
+      server.addTopic(token, title, message) should be('right)
+      server.logout(token)
+      server.addTopic(token, secondTitle, message) should be('left)
+      server.getTopic(token, title) should be('left)
+      server.updateTopic(token, title, secondTitle) should be('left)
+      server.deleteTopic(token, title) should be(false)
     }
   }
 }

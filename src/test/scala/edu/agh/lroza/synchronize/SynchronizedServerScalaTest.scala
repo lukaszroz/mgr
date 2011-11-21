@@ -7,5 +7,5 @@ class SynchronizedServerScalaTest extends FunSuite with FunSuiteServerBeahaviors
   def server = SynchronizedServerScala();
 
   basicLogInLogOut(server)
-  topicsListManagement(server)
+  topicsManagement(server)
 }

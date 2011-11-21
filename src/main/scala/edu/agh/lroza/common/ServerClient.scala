@@ -34,4 +34,9 @@ class ServerClient(server: ActorRef) extends Server {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }
+
+  def deleteTopic(token: UUID, title: String) = (server ? DeleteTopic(token, title)).as[Boolean] match {
+    case Some(b) => b
+    case None => false
+  }
 }

@@ -65,6 +65,17 @@ class SynchronizedServerScala extends Server {
     }
   }
 
+  def deleteTopic(token: UUID, title: String) = {
+    if (!loggedUsers.contains(token)) {
+      false
+    } else {
+      topics.remove(title) match {
+        case Some(_) => true
+        case None => false
+      }
+    }
+  }
+
   private def checkIfLoggedAndDo[T](token: UUID)(code: => Either[Problem, T]): Either[Problem, T] = {
     if (!loggedUsers.contains(token)) {
       Left(Problem("Please log in"))
