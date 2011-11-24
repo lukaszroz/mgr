@@ -9,7 +9,7 @@ class Client(server: ActorRef) extends NoticeBoardServer {
     case None => None
   }
 
-  def listTopics(token: UUID) = (server ? ListTopics(token)).as[Either[Problem, Set[String]]] match {
+  def listNoticesIds(token: UUID) = (server ? ListTopics(token)).as[Either[Problem, Set[String]]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }
@@ -19,7 +19,7 @@ class Client(server: ActorRef) extends NoticeBoardServer {
     case None => false
   }
 
-  def addTopic(token: UUID, title: String, message: String) = (server ? AddTopic(token, title, message)).as[Either[Problem, Notice]] match {
+  def addNotice(token: UUID, title: String, message: String) = (server ? AddTopic(token, title, message)).as[Either[Problem, Notice]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }

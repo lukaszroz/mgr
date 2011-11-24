@@ -19,7 +19,7 @@ class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
 
   }
 
-  def listTopics(token: UUID) = {
+  def listNoticesIds(token: UUID) = {
     checkIfLoggedAndDo(token) {
       Right(topics.keySet)
     }
@@ -32,7 +32,7 @@ class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
     }
   }
 
-  def addTopic(token: UUID, title: String, message: String) = {
+  def addNotice(token: UUID, title: String, message: String) = {
     checkIfLoggedAndDo(token) {
       val topic = Notice(message)
       val stored = topics.getOrElseUpdate(title, topic)

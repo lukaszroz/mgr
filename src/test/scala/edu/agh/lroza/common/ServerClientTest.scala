@@ -31,23 +31,23 @@ class ServerClientTest extends FunSuite with MockitoSugar with BeforeAndAfter wi
   }
 
   test("list should call server object") {
-    when(server.listTopics(null)).thenReturn(Right(Set[String]()))
-    serverClient.listTopics(null) should equal(Right(Set[String]()))
-    verify(server).listTopics(null)
+    when(server.listNoticesIds(null)).thenReturn(Right(Set[String]()))
+    serverClient.listNoticesIds(null) should equal(Right(Set[String]()))
+    verify(server).listNoticesIds(null)
   }
 
   test("addTopic should call server object") {
     val topic = Right(Notice(""))
-    when(server.addTopic(null, null, null)).thenReturn(topic)
-    serverClient.addTopic(null, null, null) should equal(topic)
-    verify(server).addTopic(null, null, null)
+    when(server.addNotice(null, null, null)).thenReturn(topic)
+    serverClient.addNotice(null, null, null) should equal(topic)
+    verify(server).addNotice(null, null, null)
   }
 
   test("getTopic should call server object") {
     val topic = Right(Notice(""))
-    when(server.getTopic(null, null)).thenReturn(topic)
+    when(server.getNotice(null, null)).thenReturn(topic)
     serverClient.getTopic(null, null) should equal(topic)
-    verify(server).getTopic(null, null)
+    verify(server).getNotice(null, null)
   }
 
   test("updateTopic should call server object") {

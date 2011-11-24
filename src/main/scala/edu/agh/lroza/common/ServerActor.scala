@@ -27,19 +27,19 @@ class ServerActor(server: NoticeBoardServer) extends Actor {
       future(server.logout(token), self.channel)
     }
     case ListTopics(token) => {
-      future(server.listTopics(token), self.channel)
+      future(server.listNoticesIds(token), self.channel)
     }
     case AddTopic(token, title, message) => {
-      future(server.addTopic(token, title, message), self.channel)
+      future(server.addNotice(token, title, message), self.channel)
     }
     case GetTopic(token, title) => {
-      future(server.getTopic(token, title), self.channel)
+      future(server.getNotice(token, title), self.channel)
     }
     case UpdateTopicTitle(token, oldTitle, newTitle) => {
       future(server.updateTopicTitle(token, oldTitle, newTitle), self.channel)
     }
     case DeleteTopic(token, title) => {
-      future(server.deleteTopic(token, title), self.channel)
+      future(server.deleteNotice(token, title), self.channel)
     }
   }
 

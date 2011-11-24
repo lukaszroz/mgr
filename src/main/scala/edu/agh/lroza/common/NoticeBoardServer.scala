@@ -26,13 +26,13 @@ trait NoticeBoardServer {
 
   def logout(token: UUID): Option[Problem]
 
-  def listTopics(token: UUID): Either[Problem, Set[Id]]
+  def listNoticesIds(token: UUID): Either[Problem, Set[Id]]
 
-  def addTopic(token: UUID, title: String, message: String): Either[Problem, Id]
+  def addNotice(token: UUID, title: String, message: String): Either[Problem, Id]
 
-  def getTopic(token: UUID, id: Id): Either[Problem, Notice]
+  def getNotice(token: UUID, id: Id): Either[Problem, Notice]
 
-  def updateTopic(token: UUID, id: Id, newTitle: String, newMessage: String): Option[Problem]
+  def updateNotice(token: UUID, id: Id, title: String, message: String): Option[Problem]
 
-  def deleteTopic(uuid: UUID, id: Id): Option[Problem]
+  def deleteNotice(uuid: UUID, id: Id): Option[Problem]
 }
