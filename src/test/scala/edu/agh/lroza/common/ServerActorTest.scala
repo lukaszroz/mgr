@@ -9,7 +9,7 @@ import java.util.UUID
 
 
 class ServerActorTest extends FunSuite with MockitoSugar with BeforeAndAfter with ShouldMatchers {
-  val server = mock[Server]
+  val server = mock[NoticeBoardServer]
   var serverActor: ActorRef = Actor.actorOf(ServerActor(server))
 
   before {

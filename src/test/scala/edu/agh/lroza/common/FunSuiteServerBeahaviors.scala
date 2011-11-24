@@ -8,7 +8,7 @@ import org.scalatest.FunSuite
 trait FunSuiteServerBeahaviors extends ShouldMatchers {
   this: FunSuite =>
 
-  def basicLogInLogOut(serverFactory: => Server) {
+  def basicLogInLogOut(serverFactory: => NoticeBoardServer) {
     test("should not be able to login with wrong credentials") {
       serverFactory.login("a", "b") should equal(None)
     }
@@ -45,7 +45,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
     }
   }
 
-  def topicsManagement(serverFactory: => Server) {
+  def topicsManagement(serverFactory: => NoticeBoardServer) {
     test("should be able to add, get, update and remove topic") {
       val server = serverFactory
       val title = "title"

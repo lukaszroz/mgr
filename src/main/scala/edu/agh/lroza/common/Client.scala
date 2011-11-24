@@ -3,7 +3,7 @@ package edu.agh.lroza.common
 import akka.actor.ActorRef
 import java.util.UUID
 
-class ServerClient(server: ActorRef) extends Server {
+class Client(server: ActorRef) extends NoticeBoardServer {
   def login(username: String, password: String) = (server ? Login(username, password)).as[Some[UUID]] match {
     case Some(answer) => answer
     case None => None
@@ -19,18 +19,18 @@ class ServerClient(server: ActorRef) extends Server {
     case None => false
   }
 
-  def addTopic(token: UUID, title: String, message: String) = (server ? AddTopic(token, title, message)).as[Either[Problem, Topic]] match {
+  def addTopic(token: UUID, title: String, message: String) = (server ? AddTopic(token, title, message)).as[Either[Problem, Notice]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }
 
-  def getTopic(token: UUID, title: String) = (server ? GetTopic(token, title)).as[Either[Problem, Topic]] match {
+  def getTopic(token: UUID, title: String) = (server ? GetTopic(token, title)).as[Either[Problem, Notice]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }
 
   def updateTopicTitle(token: UUID, oldTitle: String, newTitle: String) = (server ? UpdateTopicTitle(token, oldTitle, newTitle))
-    .as[Either[Problem, Topic]] match {
+    .as[Either[Problem, Notice]] match {
     case Some(answer) => answer
     case None => Left(Problem("Timeout occured"))
   }

@@ -18,7 +18,7 @@ case class UpdateTopicTitle(token: UUID, oldTitle: String, newTitle: String)
 
 case class DeleteTopic(token: UUID, title: String)
 
-class ServerActor(server: Server) extends Actor {
+class ServerActor(server: NoticeBoardServer) extends Actor {
   protected def receive = {
     case Login(username, password) => {
       future(server.login(username, password), self.channel)
@@ -53,5 +53,5 @@ class ServerActor(server: Server) extends Actor {
 }
 
 object ServerActor {
-  def apply(server: Server) = new ServerActor(server)
+  def apply(server: NoticeBoardServer) = new ServerActor(server)
 }

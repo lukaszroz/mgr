@@ -3,12 +3,12 @@ package edu.agh.lroza.common
 import collection.mutable.{Set, HashSet, SynchronizedSet}
 import akka.actor.Actor._
 import java.util.Scanner
-import akka.actor.{Actor, ActorRef, TypedActor}
+import akka.actor.Actor
 
 object Utils {
   val port = 2552
 
-  def start(server: Server) {
+  def start(server: NoticeBoardServer) {
     remote.start("localhost", port)
     remote.register("server", Actor.actorOf(ServerActor(server)).start())
   }
@@ -18,7 +18,7 @@ object Utils {
     registry.shutdownAll()
   }
 
-  def getClient = new ServerClient(remote.actorFor("server", "localhost", port))
+  def getClient = new Client(remote.actorFor("server", "localhost", port))
 
   def waitAndStop() {
     val sc = new Scanner(System.in);
@@ -26,7 +26,7 @@ object Utils {
     stop()
   }
 
-  def run(server: Server) {
+  def run(server: NoticeBoardServer) {
     start(server)
     waitAndStop()
   }

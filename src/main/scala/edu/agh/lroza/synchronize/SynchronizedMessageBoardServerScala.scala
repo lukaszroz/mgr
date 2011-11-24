@@ -2,11 +2,11 @@ package edu.agh.lroza.synchronize
 
 import java.util.UUID
 import collection.mutable._
-import edu.agh.lroza.common.{Topic, Problem, Server}
+import edu.agh.lroza.common.{Notice, Problem, NoticeBoardServer}
 
-class SynchronizedServerScala extends Server {
+class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
   val loggedUsers = new HashMap[UUID, String] with SynchronizedMap[UUID, String]
-  val topics = new HashMap[String, Topic] with SynchronizedMap[String, Topic]
+  val topics = new HashMap[String, Notice] with SynchronizedMap[String, Notice]
 
   def login(username: String, password: String) = {
     if (username.equals(password)) {
@@ -34,7 +34,7 @@ class SynchronizedServerScala extends Server {
 
   def addTopic(token: UUID, title: String, message: String) = {
     checkIfLoggedAndDo(token) {
-      val topic = Topic(message)
+      val topic = Notice(message)
       val stored = topics.getOrElseUpdate(title, topic)
       Either.cond(topic.equals(stored), stored, Problem("Topic already exists"))
     }
@@ -85,8 +85,8 @@ class SynchronizedServerScala extends Server {
   }
 }
 
-object SynchronizedServerScala {
-  def apply() = new SynchronizedServerScala
+object SynchronizedMessageBoardServerScala {
+  def apply() = new SynchronizedMessageBoardServerScala
 
   def main(args: Array[String]) {
     //    run[SynchronizedServerScala]()
