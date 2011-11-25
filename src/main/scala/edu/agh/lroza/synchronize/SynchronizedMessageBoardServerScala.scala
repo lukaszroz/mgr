@@ -2,83 +2,91 @@ package edu.agh.lroza.synchronize
 
 import java.util.UUID
 import collection.mutable._
-import edu.agh.lroza.common.{Notice, Problem, NoticeBoardServer}
+import edu.agh.lroza.common._
+
+case class TitleId(id: String) extends Id
 
 class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
   val loggedUsers = new HashMap[UUID, String] with SynchronizedMap[UUID, String]
-  val topics = new HashMap[String, Notice] with SynchronizedMap[String, Notice]
+  val notices = new HashMap[Id, Notice] with SynchronizedMap[Id, Notice]
 
   def login(username: String, password: String) = {
     if (username.equals(password)) {
       val token = UUID.randomUUID()
       loggedUsers += token -> username
-      Some(token)
+      Right(token)
     } else {
-      None
+      Left(ProblemS("Wrong password"))
     }
 
-  }
-
-  def listNoticesIds(token: UUID) = {
-    checkIfLoggedAndDo(token) {
-      Right(topics.keySet)
-    }
   }
 
   def logout(token: UUID) = {
     loggedUsers.remove(token) match {
-      case Some(_: String) => true
-      case None => false
+      case Some(_: String) => None
+      case None => Some(ProblemS("Invalid token"))
+    }
+  }
+
+  def listNoticesIds(token: UUID) = {
+    validateTokenEither(token) {
+      Right(notices.keySet)
     }
   }
 
   def addNotice(token: UUID, title: String, message: String) = {
-    checkIfLoggedAndDo(token) {
-      val topic = Notice(message)
-      val stored = topics.getOrElseUpdate(title, topic)
-      Either.cond(topic.equals(stored), stored, Problem("Topic already exists"))
+    validateTokenEither(token) {
+      val notice = NoticeS(title, message)
+      val stored = notices.getOrElseUpdate(TitleId(title), notice)
+      Either.cond(notice.equals(stored), TitleId(title), ProblemS("Topic with title '" + title + "' already exists"))
     }
   }
 
-  def getTopic(token: UUID, title: String) = {
-    checkIfLoggedAndDo(token) {
-      topics.get(title) match {
+  def getNotice(token: UUID, id: Id) = {
+    validateTokenEither(token) {
+      notices.get(id) match {
         case Some(topic) => Right(topic)
-        case None => Left(Problem("There is no such topic '" + title + "'"))
+        case None => Left(ProblemS("There is no such topic '" + id + "'"))
       }
     }
   }
 
-  def updateTopicTitle(token: UUID, oldTitle: String, newTitle: String) = {
-    checkIfLoggedAndDo(token) {
-      topics.synchronized {
-        if (!topics.contains(oldTitle)) {
-          Left(Problem("There is no such topic '" + oldTitle + "'"))
-        } else if (topics.contains(newTitle)) {
-          Left(Problem("Topic with title '" + newTitle + "' already exists"))
+  def updateNotice(token: UUID, id: Id, title: String, message: String) = {
+    validateTokenOption(token) {
+      notices.synchronized {
+        if (!notices.contains(id)) {
+          Some(ProblemS("There is no such topic '" + id + "'"))
+        } else if (notices.contains(TitleId(title))) {
+          Some(ProblemS("Topic with title '" + title + "' already exists"))
         } else {
-          val topic = topics.remove(oldTitle).get
-          topics += newTitle -> topic
-          Right(topic)
+          notices.remove(id).get
+          notices += TitleId(title) -> NoticeS(title, message)
+          None
         }
       }
     }
   }
 
-  def deleteTopic(token: UUID, title: String) = {
-    if (!loggedUsers.contains(token)) {
-      false
-    } else {
-      topics.remove(title) match {
-        case Some(_) => true
-        case None => false
+  def deleteNotice(token: UUID, id: Id) = {
+    validateTokenOption(token) {
+      notices.remove(id) match {
+        case Some(_) => None
+        case None => Some(ProblemS("There is no such topic '" + id + "'"))
       }
     }
   }
 
-  private def checkIfLoggedAndDo[T](token: UUID)(code: => Either[Problem, T]): Either[Problem, T] = {
+  private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]): Either[Problem, T] = {
     if (!loggedUsers.contains(token)) {
-      Left(Problem("Please log in"))
+      Left(ProblemS("Please log in"))
+    } else {
+      code
+    }
+  }
+
+  private def validateTokenOption(token: UUID)(code: => Option[Problem]): Option[Problem] = {
+    if (!loggedUsers.contains(token)) {
+      Some(ProblemS("Please log in"))
     } else {
       code
     }
