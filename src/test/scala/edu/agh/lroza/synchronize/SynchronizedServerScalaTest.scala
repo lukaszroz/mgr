@@ -4,8 +4,8 @@ import org.scalatest.FunSuite
 import edu.agh.lroza.common.FunSuiteServerBeahaviors
 
 class SynchronizedServerScalaTest extends FunSuite with FunSuiteServerBeahaviors {
-  def server = SynchronizedMessageBoardServerScala();
+  def server = SynchronizedServerScala();
 
   basicLogInLogOut(server)
-  topicsManagement(server)
+  noticesManagement(server)
 }

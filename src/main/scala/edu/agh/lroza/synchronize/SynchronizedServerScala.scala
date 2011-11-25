@@ -6,7 +6,7 @@ import edu.agh.lroza.common._
 
 case class TitleId(id: String) extends Id
 
-class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
+class SynchronizedServerScala extends NoticeBoardServer {
   val loggedUsers = new HashMap[UUID, String] with SynchronizedMap[UUID, String]
   val notices = new HashMap[Id, Notice] with SynchronizedMap[Id, Notice]
 
@@ -38,7 +38,7 @@ class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
     validateTokenEither(token) {
       val notice = NoticeS(title, message)
       val stored = notices.getOrElseUpdate(TitleId(title), notice)
-      Either.cond(notice.equals(stored), TitleId(title), ProblemS("Topic with title '" + title + "' already exists"))
+      Either.cond(notice.eq(stored), TitleId(title), ProblemS("Topic with title '" + title + "' already exists"))
     }
   }
 
@@ -52,16 +52,16 @@ class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
   }
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = {
-    validateTokenOption(token) {
+    validateTokenEither(token) {
       notices.synchronized {
         if (!notices.contains(id)) {
-          Some(ProblemS("There is no such topic '" + id + "'"))
+          Left(ProblemS("There is no such topic '" + id + "'"))
         } else if (notices.contains(TitleId(title))) {
-          Some(ProblemS("Topic with title '" + title + "' already exists"))
+          Left(ProblemS("Topic with title '" + title + "' already exists"))
         } else {
           notices.remove(id).get
           notices += TitleId(title) -> NoticeS(title, message)
-          None
+          Right(TitleId(title))
         }
       }
     }
@@ -93,8 +93,8 @@ class SynchronizedMessageBoardServerScala extends NoticeBoardServer {
   }
 }
 
-object SynchronizedMessageBoardServerScala {
-  def apply() = new SynchronizedMessageBoardServerScala
+object SynchronizedServerScala {
+  def apply() = new SynchronizedServerScala
 
   def main(args: Array[String]) {
     //    run[SynchronizedServerScala]()

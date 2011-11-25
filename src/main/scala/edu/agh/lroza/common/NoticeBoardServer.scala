@@ -32,7 +32,7 @@ trait NoticeBoardServer {
 
   def getNotice(token: UUID, id: Id): Either[Problem, Notice]
 
-  def updateNotice(token: UUID, id: Id, title: String, message: String): Option[Problem]
+  def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id]
 
   def deleteNotice(uuid: UUID, id: Id): Option[Problem]
 }
