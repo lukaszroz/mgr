@@ -17,9 +17,7 @@ trait Notice {
   def message: String
 }
 
-trait Id {
-  def id: String
-}
+trait Id
 
 trait NoticeBoardServer {
   def login(username: String, password: String): Either[Problem, UUID]

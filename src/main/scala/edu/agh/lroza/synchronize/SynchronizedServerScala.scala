@@ -7,13 +7,13 @@ import edu.agh.lroza.common._
 case class TitleId(id: String) extends Id
 
 class SynchronizedServerScala extends NoticeBoardServer {
-  val loggedUsers = new HashMap[UUID, String] with SynchronizedMap[UUID, String]
+  val loggedUsers = new HashSet[UUID] with SynchronizedSet[UUID]
   val notices = new HashMap[Id, Notice] with SynchronizedMap[Id, Notice]
 
   def login(username: String, password: String) = {
     if (username.equals(password)) {
       val token = UUID.randomUUID()
-      loggedUsers += token -> username
+      loggedUsers += token
       Right(token)
     } else {
       Left(ProblemS("Wrong password"))
@@ -22,9 +22,10 @@ class SynchronizedServerScala extends NoticeBoardServer {
   }
 
   def logout(token: UUID) = {
-    loggedUsers.remove(token) match {
-      case Some(_: String) => None
-      case None => Some(ProblemS("Invalid token"))
+    if (loggedUsers.remove(token)) {
+      None
+    } else {
+      Some(ProblemS("Invalid token"))
     }
   }
 
@@ -45,8 +46,8 @@ class SynchronizedServerScala extends NoticeBoardServer {
   def getNotice(token: UUID, id: Id) = {
     validateTokenEither(token) {
       notices.get(id) match {
-        case Some(topic) => Right(topic)
-        case None => Left(ProblemS("There is no such topic '" + id + "'"))
+        case Some(n) => Right(n)
+        case None => Left(ProblemS("There is no such notice '" + id + "'"))
       }
     }
   }
@@ -55,7 +56,7 @@ class SynchronizedServerScala extends NoticeBoardServer {
     validateTokenEither(token) {
       notices.synchronized {
         if (!notices.contains(id)) {
-          Left(ProblemS("There is no such topic '" + id + "'"))
+          Left(ProblemS("There is no such notice '" + id + "'"))
         } else if (notices.contains(TitleId(title))) {
           Left(ProblemS("Topic with title '" + title + "' already exists"))
         } else {
@@ -71,14 +72,14 @@ class SynchronizedServerScala extends NoticeBoardServer {
     validateTokenOption(token) {
       notices.remove(id) match {
         case Some(_) => None
-        case None => Some(ProblemS("There is no such topic '" + id + "'"))
+        case None => Some(ProblemS("There is no such notice '" + id + "'"))
       }
     }
   }
 
   private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]): Either[Problem, T] = {
     if (!loggedUsers.contains(token)) {
-      Left(ProblemS("Please log in"))
+      Left(ProblemS("Invalid token"))
     } else {
       code
     }
@@ -86,7 +87,7 @@ class SynchronizedServerScala extends NoticeBoardServer {
 
   private def validateTokenOption(token: UUID)(code: => Option[Problem]): Option[Problem] = {
     if (!loggedUsers.contains(token)) {
-      Some(ProblemS("Please log in"))
+      Some(ProblemS("Invalid token"))
     } else {
       code
     }

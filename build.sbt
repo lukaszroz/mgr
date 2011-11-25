@@ -23,5 +23,6 @@ parallelExecution in IntegrationTest := false
 
 libraryDependencies ++= Seq(
   "se.scalablesolutions.akka" % "akka-actor" % "1.2",
-  "org.mockito" % "mockito-core" % "1.8.5"
+  "org.mockito" % "mockito-core" % "1.8.5",
+  "com.google.guava" % "guava" % "10.0.1"
 )
