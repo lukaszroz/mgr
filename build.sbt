@@ -1,4 +1,6 @@
-import AssemblyKeys._ // put this at the top of the file
+import AssemblyKeys._
+
+// put this at the top of the file
 
 seq(assemblySettings: _*)
 
@@ -20,7 +22,6 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 parallelExecution in IntegrationTest := false
 
 libraryDependencies ++= Seq(
-  "se.scalablesolutions.akka" % "akka-remote" % "1.2",
-  "se.scalablesolutions.akka" % "akka-typed-actor" % "1.2",
+  "se.scalablesolutions.akka" % "akka-actors" % "1.2",
   "org.mockito" % "mockito-core" % "1.8.5"
 )
