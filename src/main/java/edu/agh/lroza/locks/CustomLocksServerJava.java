@@ -16,8 +16,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static edu.agh.lroza.common.UtilsJ.*;
 
 public class CustomLocksServerJava implements NoticeBoardServer {
-    private java.util.Set<UUID> loggedUsers = new HashSet<UUID>();
-    private java.util.Map<Id, Notice> notices = new HashMap<Id, Notice>();
+    private java.util.Set<UUID> loggedUsers = new HashSet<>();
+    private java.util.Map<Id, Notice> notices = new HashMap<>();
 
     private ReadWriteLock loggedUsersLock = new ReentrantReadWriteLock();
     private ReadWriteLock noticesLock = new ReentrantReadWriteLock();

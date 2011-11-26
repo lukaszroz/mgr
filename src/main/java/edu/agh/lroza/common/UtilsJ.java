@@ -11,15 +11,15 @@ public class UtilsJ {
     }
 
     public static <Problem, U> Right<Problem, U> right(U right) {
-        return new Right<Problem, U>(right);
+        return new Right<>(right);
     }
 
     public static <Problem, U> Left<Problem, U> left(Problem left) {
-        return new Left<Problem, U>(left);
+        return new Left<>(left);
     }
 
     public static <T> Option<T> some(T t) {
-        return new Some<T>(t);
+        return new Some<>(t);
     }
 
     public static <T> Option<T> none() {

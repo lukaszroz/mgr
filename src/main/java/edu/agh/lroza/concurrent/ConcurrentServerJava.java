@@ -16,9 +16,9 @@ import static edu.agh.lroza.common.UtilsJ.*;
 
 public class ConcurrentServerJava implements NoticeBoardServer {
     private final Object o = new Object();
-    private ConcurrentMap<UUID, Object> loggedUsers = new ConcurrentHashMap<UUID, Object>();
-    private ConcurrentMap<String, Object> titleSet = new ConcurrentHashMap<String, Object>();
-    private ConcurrentMap<Id, Notice> notices = new ConcurrentHashMap<Id, Notice>();
+    private ConcurrentMap<UUID, Object> loggedUsers = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, Object> titleSet = new ConcurrentHashMap<>();
+    private ConcurrentMap<Id, Notice> notices = new ConcurrentHashMap<>();
 
     private static class LongId implements Id {
         private static final AtomicLong generator = new AtomicLong();
