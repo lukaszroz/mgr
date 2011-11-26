@@ -69,7 +69,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
 
       //should return Problem when asked for notice not present
       val wrongId = new Id {
-        def id = secondTitle
+        def id = title + secondTitle
       }
       server.getNotice(token, wrongId) should be('left)
 
@@ -98,11 +98,15 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       //shouldn't be able to delete when there is no notice
       server.deleteNotice(token, id) should be('defined)
 
-      //tests after logout
+      //shouldn't be able to update non existing notice
+      server.updateNotice(token, id, title, message) should be('left)
+
+      //should be able to add notice after failed update
       either = server.addNotice(token, title, message)
       either should be('right)
       id = either.right.get
 
+      //tests after logout
       server.logout(token)
       server.addNotice(token, secondTitle, message) should be('left)
       server.getNotice(token, id) should be('left)
