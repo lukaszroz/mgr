@@ -4,11 +4,11 @@ import java.util.UUID
 import collection.mutable._
 import edu.agh.lroza.common._
 
-case class TitleId(id: String) extends Id
-
 class SynchronizedServerScala extends NoticeBoardServer {
   val loggedUsers = new HashSet[UUID] with SynchronizedSet[UUID]
   val notices = new HashMap[Id, Notice] with SynchronizedMap[Id, Notice]
+
+  case class TitleId(id: String) extends Id
 
   def login(username: String, password: String) = {
     if (username.equals(password)) {

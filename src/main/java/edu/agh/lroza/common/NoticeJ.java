@@ -16,4 +16,9 @@ public class NoticeJ implements Notice {
     public String message() {
         return message;
     }
+
+    @Override
+    public String toString() {
+        return "NoticeJ(" + title + ", " + message + ")";
+    }
 }

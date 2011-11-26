@@ -7,19 +7,20 @@ import java.util.concurrent.ConcurrentHashMap
 import java.lang.Object
 import java.util.concurrent.atomic.AtomicLong
 
-case class LongId(id: Long) extends Id
-
-object LongId {
-  private val generator = new AtomicLong();
-
-  def apply(): Id = LongId(generator.getAndIncrement)
-}
 
 class ConcurrentServerScala extends NoticeBoardServer {
   val o = new Object
   val loggedUsers = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[UUID, Object]())
   val titleSet = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[String, Object]())
   val notices = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[Id, Notice]())
+
+  case class LongId(id: Long) extends Id
+
+  object LongId {
+    private val generator = new AtomicLong();
+
+    def apply(): Id = LongId(generator.getAndIncrement)
+  }
 
   def login(username: String, password: String) = {
     if (username.equals(password)) {

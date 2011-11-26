@@ -45,7 +45,7 @@ public class CustomLocksServerJava implements NoticeBoardServer {
 
         @Override
         public String toString() {
-            return title;
+            return "TitleId(" + title + ")";
         }
     }
 

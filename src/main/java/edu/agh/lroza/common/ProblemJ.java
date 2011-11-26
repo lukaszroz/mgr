@@ -10,4 +10,9 @@ public class ProblemJ implements Problem {
     public String message() {
         return message;
     }
+
+    @Override
+    public String toString() {
+        return "ProblemJ(" + message + ")";
+    }
 }

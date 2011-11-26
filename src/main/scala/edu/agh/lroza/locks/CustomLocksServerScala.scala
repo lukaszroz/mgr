@@ -5,13 +5,13 @@ import collection.mutable._
 import edu.agh.lroza.common._
 import actors.threadpool.locks.{Lock, ReentrantReadWriteLock}
 
-case class TitleId(id: String) extends Id
-
 class CustomLocksServerScala extends NoticeBoardServer {
   val loggedUsers = new HashSet[UUID]
   val notices = new HashMap[Id, Notice]
   val loggedUsersLock = new ReentrantReadWriteLock
   val noticesLock = new ReentrantReadWriteLock
+
+  case class TitleId(id: String) extends Id
 
   private def lock[T](lock: Lock)(block: => T): T = {
     lock.lock()
