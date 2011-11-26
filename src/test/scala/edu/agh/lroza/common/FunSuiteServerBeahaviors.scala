@@ -3,6 +3,8 @@ package edu.agh.lroza.common
 import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
+import java.util.concurrent.CountDownLatch
+import actors.threadpool.{TimeUnit, Executors}
 
 trait FunSuiteServerBeahaviors extends ShouldMatchers {
   this: FunSuite =>
@@ -106,6 +108,40 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       server.getNotice(token, id) should be('left)
       server.updateNotice(token, id, secondTitle, message) should be('left)
       server.deleteNotice(token, id) should be('defined)
+    }
+
+    test("id set should be snapshot") {
+      val server = serverFactory
+      val token = server.login("a", "a").right.get
+      for (i <- 1 to 100) {
+        server.addNotice(token, "title" + i, "message" + i)
+      }
+      val set = server.listNoticesIds(token).right.get;
+      val n = 20
+      val pool = Executors.newFixedThreadPool(n)
+      val cdlStart = new CountDownLatch(1);
+      for (i <- 1 to n * 2) {
+        pool.submit(new Runnable {
+          def run() {
+            cdlStart.await();
+            Thread.sleep(10)
+            val id = server.addNotice(token, "title0" + i, "message0" + i).right.get
+          }
+        })
+      }
+      try {
+        cdlStart.countDown()
+        var c = 0
+        for (id <- set) {
+          Thread.sleep(1)
+          c += 1
+        }
+        set should have size (100)
+        c should be(100)
+      } finally {
+        pool.shutdown()
+        pool.awaitTermination(10, TimeUnit.SECONDS)
+      }
     }
   }
 }

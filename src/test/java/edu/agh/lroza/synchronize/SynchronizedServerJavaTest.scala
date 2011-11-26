@@ -2,10 +2,13 @@ package edu.agh.lroza.synchronize
 
 import org.scalatest.FunSuite
 import edu.agh.lroza.common.FunSuiteServerBeahaviors
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class SynchronizedServerJavaTest extends FunSuite with FunSuiteServerBeahaviors {
-  val server = new SynchronizedServerJava();
+  def server = new SynchronizedServerJava();
 
   basicLogInLogOut(server)
-  noticesManagement(new SynchronizedServerJava)
+  noticesManagement(server)
 }

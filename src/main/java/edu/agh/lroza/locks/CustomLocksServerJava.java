@@ -1,5 +1,6 @@
 package edu.agh.lroza.locks;
 
+import com.google.common.collect.ImmutableSet;
 import edu.agh.lroza.common.*;
 import scala.Either;
 import scala.Option;
@@ -89,7 +90,7 @@ public class CustomLocksServerJava implements NoticeBoardServer {
         if (isValid(token)) {
             noticesLock.readLock().lock();
             try {
-                return UtilsJ.right((Set<Id>) JavaConversions.asScalaSet(notices.keySet()));
+                return UtilsJ.right((Set<Id>) JavaConversions.asScalaSet(ImmutableSet.copyOf(notices.keySet())));
             } finally {
                 noticesLock.readLock().unlock();
             }

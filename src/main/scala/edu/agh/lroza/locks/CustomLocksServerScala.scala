@@ -48,7 +48,7 @@ class CustomLocksServerScala extends NoticeBoardServer {
   def listNoticesIds(token: UUID) = {
     validateTokenEither(token) {
       lock(noticesLock.readLock()) {
-        Right(notices.keySet)
+        Right(notices.keySet.toSet)
       }
     }
   }

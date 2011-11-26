@@ -1,5 +1,6 @@
 package edu.agh.lroza.synchronize;
 
+import com.google.common.collect.ImmutableSet;
 import edu.agh.lroza.common.*;
 import scala.Either;
 import scala.Option;
@@ -64,7 +65,7 @@ public class SynchronizedServerJava implements NoticeBoardServer {
 
     public Either<Problem, Set<Id>> listNoticesIds(UUID token) {
         if (loggedUsers.contains(token)) {
-            return UtilsJ.right((Set<Id>) JavaConversions.asScalaSet(notices.keySet()));
+            return UtilsJ.right((Set<Id>) JavaConversions.asScalaSet(ImmutableSet.copyOf(notices.keySet())));
         } else {
             return left(newProblem("Invalid token"));
         }

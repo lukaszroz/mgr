@@ -31,7 +31,7 @@ class SynchronizedServerScala extends NoticeBoardServer {
 
   def listNoticesIds(token: UUID) = {
     validateTokenEither(token) {
-      Right(notices.keySet)
+      Right(notices.keySet.toSet)
     }
   }
 
