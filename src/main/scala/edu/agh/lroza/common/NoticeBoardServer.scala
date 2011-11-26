@@ -3,10 +3,6 @@ package edu.agh.lroza.common
 import java.util.UUID
 import scala.collection.Set
 
-final case class ProblemS(message: String) extends Problem;
-
-final case class NoticeS(title: String, message: String) extends Notice;
-
 trait Problem {
   def message: String
 }

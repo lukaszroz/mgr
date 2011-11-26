@@ -59,7 +59,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       var id = either.right.get
 
       //should not be able to add notice with the same title
-      server.addNotice(token, title, message) should be('left)
+      server.addNotice(token, title, message + "2") should be('left)
 
       server.listNoticesIds(token).right.get should (contain(id) and have size (1))
 
