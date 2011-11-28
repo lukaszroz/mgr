@@ -4,20 +4,9 @@ import java.util.UUID
 import akka.actor.{UntypedChannel, ActorRef, Actor}
 import edu.agh.lroza.common.NoticeS
 import akka.event.EventHandler
-
-case class GetNotice(token: UUID)
-
-case class ValidatedGetNotice(originalSender: UntypedChannel)
-
-case class UpdateNotice(token: UUID, title: String, message: String)
-
-case class ValidatedTokenUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
-
-case class ValidatedUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
-
-case class DeleteNotice(token: UUID)
-
-case class ValidatedDeleteNotice(originalSender: UntypedChannel)
+import edu.agh.lroza.actors.NoticeActorS._
+import edu.agh.lroza.actors.NoticesActorS._
+import edu.agh.lroza.actors.LoginActorS.ValidateToken
 
 class NoticeActorS(noticesActor: ActorRef, loginActor: ActorRef, var notice: NoticeS) extends Actor {
 
@@ -53,4 +42,22 @@ class NoticeActorS(noticesActor: ActorRef, loginActor: ActorRef, var notice: Not
       originalSender ! None
       self.stop()
   }
+}
+
+object NoticeActorS {
+
+  case class GetNotice(token: UUID)
+
+  case class UpdateNotice(token: UUID, title: String, message: String)
+
+  case class DeleteNotice(token: UUID)
+
+  private case class ValidatedGetNotice(originalSender: UntypedChannel)
+
+  private case class ValidatedTokenUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
+
+  private case class ValidatedUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
+
+  private case class ValidatedDeleteNotice(originalSender: UntypedChannel)
+
 }

@@ -3,12 +3,7 @@ package edu.agh.lroza.actors
 import java.util.UUID
 import edu.agh.lroza.common.{ProblemS, Problem}
 import akka.actor.{UntypedChannel, Actor}
-
-case class Login(username: String, password: String);
-
-case class Logout(token: UUID);
-
-case class ValidateToken[T](token: UUID, originalSender: UntypedChannel, returnOption: Boolean, returnMessage: AnyRef);
+import edu.agh.lroza.actors.LoginActorS._
 
 class LoginActorS extends Actor {
   var loggedUsers = Set[UUID]()
@@ -32,18 +27,33 @@ class LoginActorS extends Actor {
     }
   }
 
+  def returnProblem(returnOption: Boolean, originalSender: UntypedChannel, problem: Problem) {
+    if (returnOption) {
+      originalSender ! Some(problem)
+    } else {
+      originalSender ! Left(problem)
+    }
+  }
+
   protected def receive = {
     case ValidateToken(token, originalSender, returnOption, returnMessage) =>
       if (loggedUsers.contains(token)) {
-        self reply returnMessage
-      } else {
-        if (returnOption) {
-          originalSender ! Some(ProblemS("Please log in"))
-        } else {
-          originalSender ! Left(ProblemS("Please log in"))
+        if (!self.channel.tryTell(returnMessage)) {
+          returnProblem(returnOption, originalSender, ProblemS("Notice has been deleted"))
         }
+      } else {
+        returnProblem(returnOption, originalSender, ProblemS("Please log in"))
       }
     case Login(username, password) => self reply login(username, password)
     case Logout(token) => self reply logout(token)
   }
+}
+
+object LoginActorS {
+
+  case class Login(username: String, password: String);
+
+  case class Logout(token: UUID);
+
+  private[actors] case class ValidateToken(token: UUID, originalSender: UntypedChannel, returnOption: Boolean, returnMessage: AnyRef);
 }

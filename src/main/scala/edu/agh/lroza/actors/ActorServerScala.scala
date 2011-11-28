@@ -5,15 +5,19 @@ import edu.agh.lroza.common._
 import akka.actor.Actor
 import akka.event.EventHandler
 import akka.dispatch.Future
+import edu.agh.lroza.actors.NoticeActorS.{UpdateNotice, GetNotice, DeleteNotice}
+import edu.agh.lroza.actors.NoticesActorS._
+import edu.agh.lroza.actors.LoginActorS.{Logout, Login}
 
 class ActorServerScala extends NoticeBoardServer {
   val loginActor = Actor.actorOf[LoginActorS].start()
   val noticesActor = Actor.actorOf(new NoticesActorS(loginActor)).start()
 
-  def login(username: String, password: String) = (loginActor ? Login(username, password)).as[Either[Problem, UUID]] match {
-    case Some(answer) => answer
-    case None => Left(ProblemS("Timeout occured"))
-  }
+  def login(username: String, password: String) =
+    (loginActor ? Login(username, password)).as[Either[Problem, UUID]] match {
+      case Some(answer) => answer
+      case None => Left(ProblemS("Timeout occured"))
+    }
 
   def logout(token: UUID) = (loginActor ? Logout(token)).as[Option[Problem]] match {
     case Some(answer) => answer
@@ -53,23 +57,26 @@ class ActorServerScala extends NoticeBoardServer {
   }
 
   def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id] = id match {
-    case ActorId(actorRef) => if (actorRef.isRunning) {
-      (actorRef ? UpdateNotice(token, title, message)).as[Either[Problem, Id]] match {
-        case Some(answer) =>
-          EventHandler.debug(this, "updateNotice(" + id + ", " + title + ", " + message + ")=" + answer)
-          answer
-        case None => Left(ProblemS("Timeout occured"))
+    case ActorId(actorRef) =>
+      val future = Future.channel()
+      if (actorRef.tryTell(UpdateNotice(token, title, message))(future)) {
+        future.as[Either[Problem, Id]] match {
+          case Some(answer) =>
+            EventHandler.debug(this, "updateNotice(" + id + ", " + title + ", " + message + ")=" + answer)
+            answer
+          case None => Left(ProblemS("Timeout occured"))
+        }
+      } else {
+        Left(ProblemS("There is no such notice '" + id + "'"))
       }
-    } else {
-      Left(ProblemS("There is no such notice '" + id + "'"))
-    }
     case _ => Left(ProblemS("There is no such notice '" + id + "'"))
   }
 
   def deleteNotice(token: UUID, id: Id): Option[Problem] = id match {
     case ActorId(actorRef) =>
-      if (actorRef.isRunning) {
-        (actorRef ? DeleteNotice(token)).as[Option[Problem]] match {
+      val future = Future.channel()
+      if (actorRef.tryTell(DeleteNotice(token))(future)) {
+        future.as[Option[Problem]] match {
           case Some(answer) =>
             EventHandler.debug(this, "deleteNotice(" + id + ")=" + answer)
             answer

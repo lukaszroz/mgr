@@ -4,22 +4,9 @@ import java.util.UUID
 import akka.actor.{UntypedChannel, ActorRef, Actor}
 import edu.agh.lroza.common.{NoticeS, Id, ProblemS}
 import akka.event.EventHandler
+import edu.agh.lroza.actors.NoticesActorS._
+import edu.agh.lroza.actors.LoginActorS.ValidateToken
 
-case class ListNoticesIds(token: UUID)
-
-case class ValidatedListNoticesIds(originalSender: UntypedChannel)
-
-case class AddNotice(token: UUID, title: String, message: String)
-
-case class ValidatedAddNotice(originalSender: UntypedChannel, title: String, message: String)
-
-case class ActorId(actor: ActorRef) extends Id
-
-case class ReserveTitle(title: String, originalSender: UntypedChannel, returnMessage: AnyRef)
-
-case class FreeTitle(title: String)
-
-case class DeleteId(id: ActorId)
 
 class NoticesActorS(loginActor: ActorRef) extends Actor {
   var titles = Set[String]()
@@ -53,11 +40,34 @@ class NoticesActorS(loginActor: ActorRef) extends Actor {
         originalSender ! Left(ProblemS("Topic with title '" + title + "' already exists"))
       } else {
         titles = titles + title
-        self reply message
+        if (!self.channel.tryTell(message)) {
+          titles = titles - title
+          originalSender ! Left(ProblemS("Notice has been deleted"))
+        }
       }
     case FreeTitle(title) =>
       titles = titles - title
     case DeleteId(id) =>
       ids = ids - id
   }
+}
+
+object NoticesActorS {
+
+  case class ListNoticesIds(token: UUID)
+
+  case class AddNotice(token: UUID, title: String, message: String)
+
+  private[actors] case class ActorId(actor: ActorRef) extends Id
+
+  private[actors] case class ReserveTitle(title: String, originalSender: UntypedChannel, returnMessage: AnyRef)
+
+  private[actors] case class FreeTitle(title: String)
+
+  private[actors] case class DeleteId(id: ActorId)
+
+  private case class ValidatedListNoticesIds(originalSender: UntypedChannel)
+
+  private case class ValidatedAddNotice(originalSender: UntypedChannel, title: String, message: String)
+
 }
