@@ -25,19 +25,21 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
     }
 
     test("should not be able to list notices without login") {
-      serverFactory.listNoticesIds(UUID.randomUUID) should be('left)
+      val listNoticesIds = serverFactory.listNoticesIds(UUID.randomUUID)
+      listNoticesIds should be('left)
     }
-    //
+
     test("should not be able to add notice without login") {
       serverFactory.addNotice(UUID.randomUUID, "notice1", "message1") should be('left)
     }
-    //
+
     test("should list notices after login") {
       val server = serverFactory
       val token = server.login("a", "a").right.get
-      server.listNoticesIds(token) should be('right)
+      val listNoticesIds = server.listNoticesIds(token)
+      listNoticesIds should be('right)
     }
-    //
+
     test("should not be able to list notices after logout") {
       val server = serverFactory
       val token = server.login("a", "a").right.get
@@ -101,6 +103,9 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       //shouldn't be able to update non existing notice
       server.updateNotice(token, id, title, message) should be('left)
 
+      //shouldn't be able to get non existing notice
+      server.getNotice(token, id) should be('left)
+
       //should be able to add notice after failed update
       either = server.addNotice(token, title, message)
       either should be('right)
@@ -121,15 +126,20 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
         server.addNotice(token, "title" + i, "message" + i)
       }
       val set = server.listNoticesIds(token).right.get;
-      val n = 20
+      val n = 10
       val pool = Executors.newFixedThreadPool(n)
       val cdlStart = new CountDownLatch(1);
+      val cdlStop = new CountDownLatch(n * 2);
       for (i <- 1 to n * 2) {
         pool.submit(new Runnable {
           def run() {
             cdlStart.await();
             Thread.sleep(10)
-            val id = server.addNotice(token, "title0" + i, "message0" + i).right.get
+            try {
+              val id = server.addNotice(token, "title0" + i, "message0" + i).right.get
+            } finally {
+              cdlStop.countDown()
+            }
           }
         })
       }
@@ -142,6 +152,9 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
         }
         set should have size (100)
         c should be(100)
+        cdlStop.await()
+        val newSet = server.listNoticesIds(token).right.get;
+        newSet should have size (100 + n * 2)
       } finally {
         pool.shutdown()
         pool.awaitTermination(10, TimeUnit.SECONDS)
