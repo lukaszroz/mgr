@@ -5,13 +5,14 @@ import edu.agh.lroza.common._
 import akka.actor.Actor
 import akka.event.EventHandler
 import akka.dispatch.Future
-import edu.agh.lroza.actors.NoticeActorS.{UpdateNotice, GetNotice, DeleteNotice}
-import edu.agh.lroza.actors.NoticesActorS._
-import edu.agh.lroza.actors.LoginActorS.{Logout, Login}
+import scala.LoginActor.{Logout, Login}
+import scala.NoticeActor.{DeleteNotice, UpdateNotice, GetNotice}
+import scala.NoticesActor.{ActorId, AddNotice, ListNoticesIds}
+import scala.{NoticesActor, LoginActor}
 
 class ActorServerScala extends NoticeBoardServer {
-  val loginActor = Actor.actorOf[LoginActorS].start()
-  val noticesActor = Actor.actorOf(new NoticesActorS(loginActor)).start()
+  val loginActor = Actor.actorOf[LoginActor].start()
+  val noticesActor = Actor.actorOf(new NoticesActor(loginActor)).start()
 
   def login(username: String, password: String) =
     (loginActor ? Login(username, password)).as[Either[Problem, UUID]] match {
