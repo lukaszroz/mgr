@@ -1,6 +1,6 @@
 package edu.agh.lroza.actors
 
-import java.util.UUID
+import _root_.java.util.UUID
 import edu.agh.lroza.common._
 import akka.actor.Actor
 import akka.event.EventHandler

@@ -58,7 +58,7 @@ object NoticesActor {
 
   case class AddNotice(token: UUID, title: String, message: String)
 
-  case class ActorId(actor: ActorRef) extends Id
+  private[actors] case class ActorId(actor: ActorRef) extends Id
 
   private[actors] case class ReserveTitle(title: String, originalSender: UntypedChannel, returnMessage: AnyRef)
 
