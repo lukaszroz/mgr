@@ -1,18 +1,23 @@
 package edu.agh.lroza.actors.java;
 
+import static edu.agh.lroza.actors.java.NoticesActor.FreeTitle;
+import static edu.agh.lroza.actors.java.NoticesActor.ReserveTitle;
+import static edu.agh.lroza.common.UtilsJ.right;
+
 import java.util.UUID;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import akka.actor.UntypedChannel;
 import edu.agh.lroza.actors.java.LoginActor.ValidateToken;
+import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.common.Notice;
-import edu.agh.lroza.common.UtilsJ;
+import edu.agh.lroza.common.NoticeJ;
 
 public class NoticeActor extends UntypedActor {
     private final ActorRef noticesActor;
     private final ActorRef loginActor;
-    private final Notice notice;
+    private Notice notice;
 
     public static class GetNotice {
         private final UUID token;
@@ -30,6 +35,38 @@ public class NoticeActor extends UntypedActor {
         }
     }
 
+    public static class UpdateNotice {
+        private final UUID token;
+        private final String title;
+        private final String message;
+
+        public UpdateNotice(UUID token, String title, String message) {
+            this.token = token;
+            this.title = title;
+            this.message = message;
+        }
+    }
+
+    private static class ValidatedTokenUpdateNotice {
+        private final UntypedChannel originalSender;
+        private final UpdateNotice updateNotice;
+
+        public ValidatedTokenUpdateNotice(UntypedChannel originalSender, UpdateNotice updateNotice) {
+            this.originalSender = originalSender;
+            this.updateNotice = updateNotice;
+        }
+    }
+
+    private static class ReservedTitleUpdateNotice {
+        private final UntypedChannel originalSender;
+        private final UpdateNotice updateNotice;
+
+        public ReservedTitleUpdateNotice(ValidatedTokenUpdateNotice validatedTokenUpdateNotice) {
+            this.originalSender = validatedTokenUpdateNotice.originalSender;
+            this.updateNotice = validatedTokenUpdateNotice.updateNotice;
+        }
+    }
+
     public NoticeActor(ActorRef noticesActor, ActorRef loginActor, Notice notice) {
         this.noticesActor = noticesActor;
         this.loginActor = loginActor;
@@ -43,7 +80,28 @@ public class NoticeActor extends UntypedActor {
                     new ValidatedGetNotice(getContext().channel())), getContext());
         } else if (message instanceof ValidatedGetNotice) {
             ValidatedGetNotice validatedGetNotice = (ValidatedGetNotice) message;
-            validatedGetNotice.originalSender.tell(UtilsJ.right(notice));
+            validatedGetNotice.originalSender.tell(right(notice));
+        } else if (message instanceof UpdateNotice) {
+            UpdateNotice updateNotice = (UpdateNotice) message;
+            loginActor.tell(new ValidateToken(updateNotice.token, getContext().channel(), false,
+                    new ValidatedTokenUpdateNotice(getContext().channel(), updateNotice)), getContext());
+        } else if (message instanceof ValidatedTokenUpdateNotice) {
+            ValidatedTokenUpdateNotice validatedTokenUpdateNotice = (ValidatedTokenUpdateNotice) message;
+            UpdateNotice updateNotice = validatedTokenUpdateNotice.updateNotice;
+            if (updateNotice.title.equals(notice.title())) {
+                notice = new NoticeJ(updateNotice.title, updateNotice.message);
+                validatedTokenUpdateNotice.originalSender.tell(right(new ActorId(getContext())));
+            } else {
+                noticesActor.tell(new ReserveTitle(updateNotice.title, validatedTokenUpdateNotice.originalSender,
+                        new ReservedTitleUpdateNotice(validatedTokenUpdateNotice)), getContext());
+            }
+        } else if (message instanceof ReservedTitleUpdateNotice) {
+            ReservedTitleUpdateNotice reservedTitleUpdateNotice = (ReservedTitleUpdateNotice) message;
+            UpdateNotice updateNotice = reservedTitleUpdateNotice.updateNotice;
+            String oldTitle = notice.title();
+            notice = new NoticeJ(updateNotice.title, updateNotice.message);
+            noticesActor.tell(new FreeTitle(oldTitle));
+            reservedTitleUpdateNotice.originalSender.tell(right(new ActorId(getContext())));
         } else {
             throw new IllegalArgumentException("Unknown message: " + message);
         }

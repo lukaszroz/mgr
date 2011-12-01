@@ -24,14 +24,14 @@ class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Noti
       originalSender ! Right(notice)
     case UpdateNotice(token, title, message) =>
       EventHandler.debug(this, "notice=" + notice)
+      loginActor ! ValidateToken(token, self.channel, false, ValidatedTokenUpdateNotice(self.channel, title, message))
+    case ValidatedTokenUpdateNotice(originalSender, title, message) =>
       if (title == notice.title) {
         notice = NoticeS(title, message)
-        self reply Right(ActorId(self))
+        originalSender tell Right(ActorId(self))
       } else {
-        loginActor ! ValidateToken(token, self.channel, false, ValidatedTokenUpdateNotice(self.channel, title, message))
+        noticesActor ! ReserveTitle(title, originalSender, ValidatedUpdateNotice(originalSender, title, message))
       }
-    case ValidatedTokenUpdateNotice(originalSender, title, message) =>
-      noticesActor ! ReserveTitle(title, originalSender, ValidatedUpdateNotice(originalSender, title, message))
     case ValidatedUpdateNotice(originalSender, title, message) =>
       originalSender ! updateNotice(title, message)
     case DeleteNotice(token) =>

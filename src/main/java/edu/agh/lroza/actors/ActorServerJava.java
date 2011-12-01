@@ -18,6 +18,7 @@ import edu.agh.lroza.actors.java.LoginActor;
 import edu.agh.lroza.actors.java.LoginActor.Login;
 import edu.agh.lroza.actors.java.LoginActor.Logout;
 import edu.agh.lroza.actors.java.NoticeActor.GetNotice;
+import edu.agh.lroza.actors.java.NoticeActor.UpdateNotice;
 import edu.agh.lroza.actors.java.NoticesActor;
 import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.actors.scala.NoticeActor;
@@ -113,7 +114,7 @@ public class ActorServerJava implements NoticeBoardServer {
     public Either<Problem, Id> updateNotice(UUID token, Id id, String title, String message) {
         if (id instanceof ActorId) {
             ActorCompletableFuture response = UtilsS.getFuture();
-            if (((ActorId) id).getActor().tryTell(new NoticeActor.UpdateNotice(token, title, message), response)) {
+            if (((ActorId) id).getActor().tryTell(new UpdateNotice(token, title, message), response)) {
                 Option<Either<Problem, Id>> option = response.as(getManifest(Either.class));
                 if (option.isDefined()) {
                     return option.get();

@@ -37,6 +37,16 @@ public class NoticesActor extends UntypedActor {
         public ActorRef getActor() {
             return actor;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof ActorId) {
+                ActorId actorId = (ActorId) obj;
+                return this.actor.equals(actorId.actor);
+            } else {
+                return false;
+            }
+        }
     }
 
     public static class ListNoticesIds {
@@ -77,6 +87,26 @@ public class NoticesActor extends UntypedActor {
         }
     }
 
+    static class ReserveTitle {
+        private final String title;
+        private final UntypedChannel originalSender;
+        private final Object message;
+
+        public ReserveTitle(String title, UntypedChannel originalSender, Object message) {
+            this.title = title;
+            this.originalSender = originalSender;
+            this.message = message;
+        }
+    }
+
+    static class FreeTitle {
+        private final String title;
+
+        public FreeTitle(String title) {
+            this.title = title;
+        }
+    }
+
     public NoticesActor(ActorRef loginActor) {
         this.loginActor = loginActor;
     }
@@ -109,6 +139,20 @@ public class NoticesActor extends UntypedActor {
                 ids.add(id);
                 validatedAddNotice.originalSender.tell(UtilsJ.right(id));
             }
+        } else if (message instanceof ReserveTitle) {
+            ReserveTitle reserveTitle = (ReserveTitle) message;
+            if (titles.contains(reserveTitle.title)) {
+                reserveTitle.originalSender.tell(left(newProblem("Topic with title '" + reserveTitle.title + "' already exists")));
+            } else {
+                titles.add(reserveTitle.title);
+                if (!getContext().tryReply(reserveTitle.message)) {
+                    titles.remove(reserveTitle.title);
+                    reserveTitle.originalSender.tell(left(newProblem("Notice has been deleted")));
+                }
+            }
+        } else if (message instanceof FreeTitle) {
+            FreeTitle freeTitle = (FreeTitle) message;
+            titles.remove(freeTitle.title);
         } else {
             throw new IllegalArgumentException("Unknown message: " + message);
         }
