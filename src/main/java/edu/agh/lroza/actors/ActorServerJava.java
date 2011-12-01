@@ -17,6 +17,7 @@ import akka.japi.Creator;
 import edu.agh.lroza.actors.java.LoginActor;
 import edu.agh.lroza.actors.java.LoginActor.Login;
 import edu.agh.lroza.actors.java.LoginActor.Logout;
+import edu.agh.lroza.actors.java.NoticeActor.GetNotice;
 import edu.agh.lroza.actors.java.NoticesActor;
 import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.actors.scala.NoticeActor;
@@ -93,7 +94,7 @@ public class ActorServerJava implements NoticeBoardServer {
     public Either<Problem, Notice> getNotice(UUID token, Id id) {
         if (id instanceof ActorId) {
             ActorCompletableFuture response = UtilsS.getFuture();
-            if (((ActorId) id).getActor().tryTell(new NoticeActor.GetNotice(token), response)) {
+            if (((ActorId) id).getActor().tryTell(new GetNotice(token), response)) {
                 Option<Either<Problem, Notice>> option = response.as(getManifest(Either.class));
                 if (option.isDefined()) {
                     return option.get();

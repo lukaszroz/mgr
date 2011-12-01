@@ -1,18 +1,26 @@
 package edu.agh.lroza.actors.java;
 
+import static edu.agh.lroza.common.UtilsJ.left;
+import static edu.agh.lroza.common.UtilsJ.newProblem;
 import static edu.agh.lroza.common.UtilsJ.right;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import akka.actor.Actor;
 import akka.actor.ActorRef;
+import akka.actor.Actors;
 import akka.actor.UntypedActor;
 import akka.actor.UntypedChannel;
+import akka.japi.Creator;
 import edu.agh.lroza.actors.java.LoginActor.ValidateToken;
 import edu.agh.lroza.common.Id;
+import edu.agh.lroza.common.NoticeJ;
 import edu.agh.lroza.common.UtilsJ;
 import scala.collection.JavaConversions;
+
+import com.google.common.collect.ImmutableSet;
 
 public class NoticesActor extends UntypedActor {
     private ActorRef loginActor;
@@ -79,14 +87,28 @@ public class NoticesActor extends UntypedActor {
             loginActor.tell(new ValidateToken(listNoticesIds.token, getContext().getChannel(), false,
                     new ValidatedListNoticesId(getContext().getChannel())), getContext());
         } else if (message instanceof ValidatedListNoticesId) {
-            ((ValidatedListNoticesId) message).originalSender.tell(right((scala.collection.Set<Id>) JavaConversions.asScalaSet(ids)));
+            scala.collection.Set<Id> scalaSet = JavaConversions.asScalaSet(ImmutableSet.<Id>copyOf(ids));
+            ((ValidatedListNoticesId) message).originalSender.tell(right(scalaSet));
         } else if (message instanceof AddNotice) {
             AddNotice addNotice = (AddNotice) message;
             loginActor.tell(new ValidateToken(addNotice.token, getContext().getChannel(), false,
                     new ValidatedAddNotice(getContext().getChannel(), addNotice)), getContext());
         } else if (message instanceof ValidatedAddNotice) {
-            ValidatedAddNotice validatedAddNotice = (ValidatedAddNotice) message;
-            validatedAddNotice.originalSender.tell(UtilsJ.right(new ActorId(getContext())));
+            final ValidatedAddNotice validatedAddNotice = (ValidatedAddNotice) message;
+            if (titles.contains(validatedAddNotice.addNotice.title)) {
+                validatedAddNotice.originalSender.tell(left(newProblem("Topic with title '" + validatedAddNotice.addNotice.title + "' already exists")));
+            } else {
+                titles.add(validatedAddNotice.addNotice.title);
+                ActorRef actor = Actors.actorOf(new Creator<Actor>() {
+                    public Actor create() {
+                        return new NoticeActor(getContext(), loginActor, new NoticeJ(validatedAddNotice.addNotice.title, validatedAddNotice.addNotice.message));
+                    }
+                });
+                actor.start();
+                ActorId id = new ActorId(actor);
+                ids.add(id);
+                validatedAddNotice.originalSender.tell(UtilsJ.right(id));
+            }
         } else {
             throw new IllegalArgumentException("Unknown message: " + message);
         }
