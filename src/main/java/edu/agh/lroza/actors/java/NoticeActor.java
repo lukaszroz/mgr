@@ -1,7 +1,9 @@
 package edu.agh.lroza.actors.java;
 
 import static edu.agh.lroza.actors.java.NoticesActor.FreeTitle;
+import static edu.agh.lroza.actors.java.NoticesActor.RemoveId;
 import static edu.agh.lroza.actors.java.NoticesActor.ReserveTitle;
+import static edu.agh.lroza.common.UtilsJ.none;
 import static edu.agh.lroza.common.UtilsJ.right;
 
 import java.util.UUID;
@@ -67,6 +69,22 @@ public class NoticeActor extends UntypedActor {
         }
     }
 
+    public static class DeleteNotice {
+        private final UUID token;
+
+        public DeleteNotice(UUID token) {
+            this.token = token;
+        }
+    }
+
+    private static class ValidatedDeleteNotice {
+        private final UntypedChannel originalSender;
+
+        public ValidatedDeleteNotice(UntypedChannel originalSender) {
+            this.originalSender = originalSender;
+        }
+    }
+
     public NoticeActor(ActorRef noticesActor, ActorRef loginActor, Notice notice) {
         this.noticesActor = noticesActor;
         this.loginActor = loginActor;
@@ -102,6 +120,16 @@ public class NoticeActor extends UntypedActor {
             notice = new NoticeJ(updateNotice.title, updateNotice.message);
             noticesActor.tell(new FreeTitle(oldTitle));
             reservedTitleUpdateNotice.originalSender.tell(right(new ActorId(getContext())));
+        } else if (message instanceof DeleteNotice) {
+            DeleteNotice deleteNotice = (DeleteNotice) message;
+            loginActor.tell(new ValidateToken(deleteNotice.token, getContext().channel(), true,
+                    new ValidatedDeleteNotice(getContext().channel())), getContext());
+        } else if (message instanceof ValidatedDeleteNotice) {
+            ValidatedDeleteNotice validatedDeleteNotice = (ValidatedDeleteNotice) message;
+            noticesActor.tell(new RemoveId(new ActorId(getContext())));
+            noticesActor.tell(new FreeTitle(notice.title()));
+            validatedDeleteNotice.originalSender.tell(none());
+            getContext().stop();
         } else {
             throw new IllegalArgumentException("Unknown message: " + message);
         }

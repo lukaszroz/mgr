@@ -17,11 +17,11 @@ import akka.japi.Creator;
 import edu.agh.lroza.actors.java.LoginActor;
 import edu.agh.lroza.actors.java.LoginActor.Login;
 import edu.agh.lroza.actors.java.LoginActor.Logout;
+import edu.agh.lroza.actors.java.NoticeActor.DeleteNotice;
 import edu.agh.lroza.actors.java.NoticeActor.GetNotice;
 import edu.agh.lroza.actors.java.NoticeActor.UpdateNotice;
 import edu.agh.lroza.actors.java.NoticesActor;
 import edu.agh.lroza.actors.java.NoticesActor.ActorId;
-import edu.agh.lroza.actors.scala.NoticeActor;
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.common.Notice;
 import edu.agh.lroza.common.NoticeBoardServer;
@@ -133,7 +133,7 @@ public class ActorServerJava implements NoticeBoardServer {
     public Option<Problem> deleteNotice(UUID token, Id id) {
         if (id instanceof ActorId) {
             ActorCompletableFuture response = UtilsS.getFuture();
-            if (((ActorId) id).getActor().tryTell(new NoticeActor.DeleteNotice(token), response)) {
+            if (((ActorId) id).getActor().tryTell(new DeleteNotice(token), response)) {
                 Option<Option<Problem>> option = response.as(getManifest(Option.class));
                 if (option.isDefined()) {
                     return option.get();

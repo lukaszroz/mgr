@@ -47,6 +47,11 @@ public class NoticesActor extends UntypedActor {
                 return false;
             }
         }
+
+        @Override
+        public int hashCode() {
+            return actor.hashCode();
+        }
     }
 
     public static class ListNoticesIds {
@@ -107,6 +112,14 @@ public class NoticesActor extends UntypedActor {
         }
     }
 
+    static class RemoveId {
+        private final ActorId id;
+
+        RemoveId(ActorId id) {
+            this.id = id;
+        }
+    }
+
     public NoticesActor(ActorRef loginActor) {
         this.loginActor = loginActor;
     }
@@ -153,6 +166,9 @@ public class NoticesActor extends UntypedActor {
         } else if (message instanceof FreeTitle) {
             FreeTitle freeTitle = (FreeTitle) message;
             titles.remove(freeTitle.title);
+        } else if (message instanceof RemoveId) {
+            RemoveId removeId = (RemoveId) message;
+            ids.remove(removeId.id);
         } else {
             throw new IllegalArgumentException("Unknown message: " + message);
         }
