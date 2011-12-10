@@ -1,12 +1,13 @@
 package edu.agh.lroza.common
 
-import actors.Actor
 import edu.agh.lroza.synchronize.{SynchronizedServerJava, SynchronizedServerScala}
 import edu.agh.lroza.locks.{CustomLocksServerJava, CustomLocksServerScala}
 import edu.agh.lroza.concurrent.{ConcurrentServerJava, ConcurrentServerScala}
 import edu.agh.lroza.immutable.ImmutableServerScala
 import edu.agh.lroza.actors.{ActorServerJava, ActorServerScala}
 import org.clapper.argot.{ArgotUsageException, ArgotParser, ArgotConverters}
+import scala.Predef._
+import java.util.concurrent.{TimeUnit, CyclicBarrier}
 
 
 object Simulation {
@@ -16,7 +17,7 @@ object Simulation {
 
   val parser = new ArgotParser(
     "simulation",
-    preUsage = Some("Simutation: Version 1.0. Copyright (c) " +
+    preUsage = Some("Notice Board Simulation: Version 1.0. Copyright (c) " +
       "2011, Lukasz W. Rozycki")
   )
 
@@ -42,7 +43,9 @@ object Simulation {
     case ("AJ", _) => new ActorServerJava
   }
 
-  val full = parser.flag[Boolean](List("f", "full"), List("q", "quick"), "Full simulation takes longer")
+  val full = parser.flag[Boolean](List("f", "full"), "Full simulation takes longer")
+
+  val users = parser.option[Int](List("u", "users-count"), "users-count", "Number of concurrent users")
 
   def runSimulation(server: NoticeBoardServer) {
     println("Starting simulation with server: " + server.getClass.getName)
@@ -61,26 +64,47 @@ object Simulation {
       server.addNotice(token, "testTitle%4d".format(i), "testMessage%4d".format(i))
     }
 
-    val client = new User(server, "client").start()
-    client ! User.Login
+    val barrier = new CyclicBarrier(users.value.getOrElse(1))
+
+    val clients = for (i <- 1 to users.value.getOrElse(1))
+    yield new User(server, "client%2d".format(i), barrier).start()
 
     for (i <- 1 to 5) {
       for (j <- warmup) {
-        client ! User.ReadAll(j)
+        clients.map(_ ! User.Run(j))
         Thread.sleep(100);
       }
     }
 
+    def runSimulation(i: Int) {
+      println("--------------------------------------")
+      val start = System.nanoTime()
+      val results = clients.map(_ !! User.Run(n)).map(_())
+      val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
+
+      val totalCount = results.map(_ match {
+        case (_, _, count: Long) => count
+      }).sum.asInstanceOf[Double]
+
+      results.foreach {
+        _ match {
+          case (logPrefix: String, duration: Long, count: Long, problemCount: Long) =>
+            println("%s duration: %5dms, count: %d, avg: %5.2fμs".format(logPrefix,
+              TimeUnit.MICROSECONDS.toMillis(duration), count, (duration.asInstanceOf[Double]) / count))
+        }
+      }
+      println("[simulation%2d] total duration:  %6dms".format(i, duration))
+      println("[simulation%2d] total throughput: %5.3frq/ms".format(i, totalCount / duration))
+    }
+
+    runSimulation(0)
+    println("--------------------------------------")
+
     for (i <- 1 to 20) {
-      client ! User.ReadAll(n)
+      runSimulation(i)
     }
 
-    client ! User.Logout
-    client ! User.Stop
-
-    Actor.self.receive {
-      case s: String => println("Done.")
-    }
+    clients.map(_ !! User.Stop).foreach(f => println(f()))
 
     akka.actor.Actor.registry.shutdownAll()
   }
