@@ -4,12 +4,31 @@ import java.util.UUID
 import actors.Actor
 import edu.agh.lroza.common.User.{Stop, Run}
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
+import scala.Function0
 
 
-class User(server: NoticeBoardServer, name: String, barrier: CyclicBarrier) extends Actor {
+class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
   var token = UUID.randomUUID()
-  val logPrefix = "[" + name + "]"
+  val logPrefix = "[client%2d]".format(number)
   var size, startTime, duration, count, problemCount = 0L
+  var currentId: Id = null
+  val shift = if (writeEvery == 0) 0 else number * 11 % writeEvery
+
+  var nextWriteAction: Function0[Unit] = null
+
+  val addNotice: Function0[Unit] = () => {
+    nextWriteAction = updateNotice
+  }
+
+  val updateNotice: Function0[Unit] = () => {
+    nextWriteAction = deleteNotice
+  }
+
+  val deleteNotice: Function0[Unit] = () => {
+    nextWriteAction = addNotice
+  }
+
+  nextWriteAction = addNotice
 
   def reset() {
     duration = 0L
@@ -21,8 +40,14 @@ class User(server: NoticeBoardServer, name: String, barrier: CyclicBarrier) exte
     count += 1
     if (count % 100 == 50) {
       server.logout(token)
-      token = server.login(name, name).right.get
-      count += 2
+      token = server.login(logPrefix, logPrefix).right.get
+      postCall()
+      postCall()
+    }
+
+    if (writeEvery > 1 && count % writeEvery == shift) {
+      nextWriteAction()
+      postCall()
     }
   }
 
@@ -30,11 +55,16 @@ class User(server: NoticeBoardServer, name: String, barrier: CyclicBarrier) exte
     server.logout(token)
     postCall()
     duration += TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startTime)
+    if (writeEvery > 1) {
+      while (nextWriteAction != addNotice) {
+        nextWriteAction()
+      }
+    }
   }
 
   def begin() {
     startTime = System.nanoTime();
-    token = server.login(name, name).right.get
+    token = server.login(logPrefix, logPrefix).right.get
     postCall()
   }
 
@@ -52,6 +82,7 @@ class User(server: NoticeBoardServer, name: String, barrier: CyclicBarrier) exte
             val noticesIds = server.listNoticesIds(token).right.get
             postCall()
             for (id <- noticesIds) {
+              currentId = id
               size += (server.getNotice(token, id) match {
                 case Right(notice) => notice.toString.length()
                 case Left(problem) => problemCount += 1; -1

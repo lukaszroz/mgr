@@ -45,7 +45,10 @@ object Simulation {
 
   val full = parser.flag[Boolean](List("f", "full"), "Full simulation takes longer")
 
-  val users = parser.option[Int](List("u", "users-count"), "users-count", "Number of concurrent users")
+  val users = parser.option[Int](List("u", "users-count"), "users-count", "Number of concurrent users. Default 1.")
+
+  val writeEvery = parser.option[Int](List("w", "write-period"), "write-period", "How many read requests there is for " +
+    "one write request. The higher the number, the lower whe write request frequency. Default 0 (no writes).")
 
   def runSimulation(server: NoticeBoardServer) {
     println("Starting simulation with server: " + server.getClass.getName)
@@ -65,9 +68,10 @@ object Simulation {
     }
 
     val barrier = new CyclicBarrier(users.value.getOrElse(1))
+    val writePeriod = writeEvery.value.getOrElse(0)
 
-    val clients = for (i <- 1 to users.value.getOrElse(1))
-    yield new User(server, "client%2d".format(i), barrier).start()
+    val clients = for (i <- 1 to users.value.getOrElse(1)) yield new User(server, i, barrier, writePeriod).start()
+
 
     for (i <- 1 to 5) {
       for (j <- warmup) {
@@ -83,7 +87,7 @@ object Simulation {
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
 
       val totalCount = results.map(_ match {
-        case (_, _, count: Long) => count
+        case (_, _, count: Long, _) => count
       }).sum.asInstanceOf[Double]
 
       results.foreach {
@@ -94,7 +98,7 @@ object Simulation {
         }
       }
       println("[simulation%2d] total duration:  %6dms".format(i, duration))
-      println("[simulation%2d] total throughput: %5.3frq/ms".format(i, totalCount / duration))
+      println("[simulation%2d] total throughput: %5.2frq/ms".format(i, totalCount / duration))
     }
 
     runSimulation(0)
