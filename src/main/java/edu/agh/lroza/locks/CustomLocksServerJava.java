@@ -1,11 +1,10 @@
 package edu.agh.lroza.locks;
 
-import com.google.common.collect.ImmutableSet;
-import edu.agh.lroza.common.*;
-import scala.Either;
-import scala.Option;
-import scala.collection.JavaConversions;
-import scala.collection.Set;
+import static edu.agh.lroza.common.UtilsJ.left;
+import static edu.agh.lroza.common.UtilsJ.newProblem;
+import static edu.agh.lroza.common.UtilsJ.none;
+import static edu.agh.lroza.common.UtilsJ.right;
+import static edu.agh.lroza.common.UtilsJ.some;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,7 +12,18 @@ import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static edu.agh.lroza.common.UtilsJ.*;
+import edu.agh.lroza.common.Id;
+import edu.agh.lroza.common.Notice;
+import edu.agh.lroza.common.NoticeBoardServer;
+import edu.agh.lroza.common.NoticeJ;
+import edu.agh.lroza.common.Problem;
+import edu.agh.lroza.common.UtilsJ;
+import scala.Either;
+import scala.Option;
+import scala.collection.JavaConversions;
+import scala.collection.Set;
+
+import com.google.common.collect.ImmutableSet;
 
 public class CustomLocksServerJava implements NoticeBoardServer {
     private java.util.Set<UUID> loggedUsers = new HashSet<>();
@@ -144,14 +154,17 @@ public class CustomLocksServerJava implements NoticeBoardServer {
         if (isValid(token)) {
             noticesLock.writeLock().lock();
             try {
-                if (!notices.containsKey(id)) {
+                final Notice notice = notices.get(id);
+                if (notice == null) {
                     return left(newProblem("There is no such notice '" + id + "'"));
                 } else {
                     Id newId = new TitleId(title);
-                    if (notices.containsKey(newId)) {
+                    if (!newId.equals(id) && notices.containsKey(newId)) {
                         return left(newProblem("Topic with title '" + title + "' already exists"));
                     } else {
-                        notices.remove(id);
+                        if (!newId.equals(id)) {
+                            notices.remove(id);
+                        }
                         notices.put(newId, new NoticeJ(title, message));
                         return right(newId);
                     }

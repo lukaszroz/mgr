@@ -91,6 +91,9 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
       server.listNoticesIds(token).right.get should (contain(id) and contain(id2) and have size (2))
       //should not be able to change title to existing one
       server.updateNotice(token, id2, secondTitle, message) should be('left)
+      //should be able to change only message
+      server.updateNotice(token, id2, title, message + "22") should be('right)
+      server.getNotice(token, id2).right.get should have('title(title), 'message(message + "22"))
 
       //should be able to delete notice
       server.deleteNotice(token, id2) should equal(None)

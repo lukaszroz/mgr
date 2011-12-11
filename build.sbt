@@ -25,5 +25,6 @@ libraryDependencies ++= Seq(
   "se.scalablesolutions.akka" % "akka-actor" % "1.2",
   "org.mockito" % "mockito-core" % "1.8.5",
   "com.google.guava" % "guava" % "10.0.1",
-  "org.clapper" %% "argot" % "0.3.5"
+  "org.clapper" %% "argot" % "0.3.5",
+  "junit" % "junit" % "4.8" % "test"
 )

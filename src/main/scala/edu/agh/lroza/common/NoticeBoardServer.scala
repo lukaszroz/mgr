@@ -28,5 +28,5 @@ trait NoticeBoardServer {
 
   def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id]
 
-  def deleteNotice(uuid: UUID, id: Id): Option[Problem]
+  def deleteNotice(token: UUID, id: Id): Option[Problem]
 }

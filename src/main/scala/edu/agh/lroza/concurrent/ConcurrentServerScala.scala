@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong
 class ConcurrentServerScala extends NoticeBoardServer {
   val o = new Object
   val loggedUsers = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[UUID, Object]())
-  val titleSet = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[String, Object]())
+  val titleSet = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[String, Boolean]())
   val notices = JavaConversions.asScalaConcurrentMap(new ConcurrentHashMap[Id, Notice]())
 
   case class LongId(id: Long) extends Id
@@ -49,7 +49,7 @@ class ConcurrentServerScala extends NoticeBoardServer {
 
   def addNotice(token: UUID, title: String, message: String) = {
     validateTokenEither(token) {
-      titleSet.putIfAbsent(title, o) match {
+      titleSet.putIfAbsent(title, false) match {
         case None =>
           val id = LongId()
           notices.put(id, NoticeS(title, message))
@@ -70,12 +70,16 @@ class ConcurrentServerScala extends NoticeBoardServer {
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = {
     validateTokenEither(token) {
-      if (titleSet.putIfAbsent(title, o).isDefined) {
-        Left(ProblemS("Topic with title '" + title + "' already exists"))
+      if (titleSet.putIfAbsent(title, true).isDefined &&
+        !(notices.get(id).exists(_.title == title) && !titleSet.put(title, true).getOrElse(false))) {
+        Left(ProblemS("Topic with title '" + title + "' already exists or was recently changed"))
       } else {
         notices.replace(id, NoticeS(title, message)) match {
-          case Some(n) =>
-            titleSet.remove(n.title)
+          case Some(old) =>
+            titleSet.put(title, false)
+            if (title != old.title) {
+              titleSet.remove(old.title)
+            }
             Right(id)
           case None =>
             titleSet.remove(title)
@@ -89,7 +93,7 @@ class ConcurrentServerScala extends NoticeBoardServer {
     validateTokenOption(token) {
       notices.remove(id) match {
         case Some(n) =>
-          titleSet.remove(n.title)
+          while (titleSet.contains(n.title) && !titleSet.remove(n.title, false)) {}
           None
         case None => Some(ProblemS("There is no such notice '" + id + "'"))
       }

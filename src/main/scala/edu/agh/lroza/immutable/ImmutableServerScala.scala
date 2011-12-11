@@ -76,7 +76,7 @@ class ImmutableServerScala extends NoticeBoardServer {
           Left(ProblemS("There is no such notice '" + id + "'"))
         } else {
           val newId = TitleId(title)
-          if (notices.contains(newId)) {
+          if (notices.contains(newId) && id != newId) {
             Left(ProblemS("Topic with title '" + title + "' already exists"))
           } else {
             notices = notices - id + (newId -> NoticeS(title, message))

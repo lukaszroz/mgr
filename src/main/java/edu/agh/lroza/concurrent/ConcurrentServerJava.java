@@ -1,23 +1,33 @@
 package edu.agh.lroza.concurrent;
 
-import com.google.common.collect.ImmutableSet;
-import edu.agh.lroza.common.*;
-import scala.Either;
-import scala.Option;
-import scala.collection.JavaConversions;
-import scala.collection.Set;
+import static edu.agh.lroza.common.UtilsJ.left;
+import static edu.agh.lroza.common.UtilsJ.newProblem;
+import static edu.agh.lroza.common.UtilsJ.none;
+import static edu.agh.lroza.common.UtilsJ.right;
+import static edu.agh.lroza.common.UtilsJ.some;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static edu.agh.lroza.common.UtilsJ.*;
+import edu.agh.lroza.common.Id;
+import edu.agh.lroza.common.Notice;
+import edu.agh.lroza.common.NoticeBoardServer;
+import edu.agh.lroza.common.NoticeJ;
+import edu.agh.lroza.common.Problem;
+import edu.agh.lroza.common.UtilsJ;
+import scala.Either;
+import scala.Option;
+import scala.collection.JavaConversions;
+import scala.collection.Set;
+
+import com.google.common.collect.ImmutableSet;
 
 public class ConcurrentServerJava implements NoticeBoardServer {
     private final Object o = new Object();
     private ConcurrentMap<UUID, Object> loggedUsers = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Object> titleSet = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, Boolean> titleSet = new ConcurrentHashMap<>();
     private ConcurrentMap<Id, Notice> notices = new ConcurrentHashMap<>();
 
     private static class LongId implements Id {
@@ -81,7 +91,7 @@ public class ConcurrentServerJava implements NoticeBoardServer {
     @Override
     public Either<Problem, Id> addNotice(UUID token, String title, String message) {
         if (loggedUsers.containsKey(token)) {
-            if (titleSet.putIfAbsent(title, o) == null) {
+            if (titleSet.putIfAbsent(title, false) == null) {
                 Id id = LongId.get();
                 notices.put(id, new NoticeJ(title, message));
                 return UtilsJ.right(id);
@@ -110,7 +120,9 @@ public class ConcurrentServerJava implements NoticeBoardServer {
     @Override
     public Either<Problem, Id> updateNotice(UUID token, Id id, String title, String message) {
         if (loggedUsers.containsKey(token)) {
-            if (titleSet.putIfAbsent(title, o) != null) {
+            Notice oldNotice = notices.get(id);
+            if (titleSet.putIfAbsent(title, true) != null &&
+                    !(oldNotice != null && oldNotice.title().equals(title) && !reserveTitle(title))) {
                 return left(newProblem("There is no such notice '" + id + "'"));
             } else {
                 Notice previous = notices.replace(id, new NoticeJ(title, message));
@@ -118,12 +130,24 @@ public class ConcurrentServerJava implements NoticeBoardServer {
                     titleSet.remove(title);
                     return left(newProblem("There is no such notice '" + id + "'"));
                 } else {
-                    titleSet.remove(previous.title());
+                    titleSet.put(title, false);
+                    if (!previous.title().equals(title)) {
+                        titleSet.remove(previous.title());
+                    }
                     return right(id);
                 }
             }
         } else {
             return left(newProblem("Invalid token"));
+        }
+    }
+
+    private Boolean reserveTitle(String title) {
+        Boolean put = titleSet.put(title, true);
+        if (put == null) {
+            return false;
+        } else {
+            return put;
         }
     }
 
@@ -134,7 +158,7 @@ public class ConcurrentServerJava implements NoticeBoardServer {
             if (previous == null) {
                 return some(newProblem("There is no such notice '" + id + "'"));
             } else {
-                titleSet.remove(previous.title());
+                while (titleSet.containsKey(previous.title()) && !titleSet.remove(previous.title(), false)) ;
                 return none();
             }
         } else {

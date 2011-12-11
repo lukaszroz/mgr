@@ -25,6 +25,8 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   }
 
   val deleteNotice: Function0[Unit] = () => {
+    server.deleteNotice(token, currentId)
+    postCall()
     nextWriteAction = addNotice
   }
 
