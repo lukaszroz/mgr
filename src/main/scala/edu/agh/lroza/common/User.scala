@@ -4,7 +4,6 @@ import java.util.UUID
 import actors.Actor
 import edu.agh.lroza.common.User.{Stop, Run}
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
-import scala.Function0
 
 
 class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
@@ -14,17 +13,32 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   var currentId: Id = null
   val shift = if (writeEvery == 0) 0 else number * 11 % writeEvery
 
-  var nextWriteAction: Function0[Unit] = null
+  var nextWriteAction: () => Unit = null
 
-  val addNotice: Function0[Unit] = () => {
+  val addNotice: () => Unit = () => {
+    server.addNotice(token, getTitle, "message" + logPrefix)
+    postCall()
     nextWriteAction = updateNotice
   }
 
-  val updateNotice: Function0[Unit] = () => {
+  val updateNotice: () => Unit = () => {
+    server.updateNotice(token, currentId, getTitle, "message" + logPrefix)
+    postCall()
     nextWriteAction = deleteNotice
   }
 
-  val deleteNotice: Function0[Unit] = () => {
+  var modifyCount = 0L
+
+  def getTitle = {
+    modifyCount += 1
+    if (modifyCount % 11 == 0) {
+      "testTitle%05d".format(modifyCount)
+    } else {
+      "title%s%07d".format(logPrefix, modifyCount)
+    }
+  }
+
+  val deleteNotice: () => Unit = () => {
     server.deleteNotice(token, currentId)
     postCall()
     nextWriteAction = addNotice
@@ -36,6 +50,7 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
     duration = 0L
     count = 0L
     problemCount = 0L
+    modifyCount = 0L
   }
 
   def postCall() {

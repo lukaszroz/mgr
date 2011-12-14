@@ -63,8 +63,9 @@ object Simulation {
     for (i <- 1 to n * 10) {
       server.login("a", "a")
     }
+
     for (i <- 1 to n * 10) {
-      server.addNotice(token, "testTitle%4d".format(i), "testMessage%4d".format(i))
+      server.addNotice(token, "testTitle%05d".format(i), "testMessage%4d".format(i))
     }
 
     val barrier = new CyclicBarrier(users.value.getOrElse(1))
@@ -82,6 +83,12 @@ object Simulation {
 
     def runSimulation(i: Int) {
       println("--------------------------------------")
+
+      server.listNoticesIds(token).right.get.foreach(server.deleteNotice(token, _))
+      for (i <- 1 to n * 10) {
+        server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
+      }
+
       val start = System.nanoTime()
       val results = clients.map(_ !! User.Run(n)).map(_())
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
