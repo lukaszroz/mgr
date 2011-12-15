@@ -8,24 +8,22 @@ import edu.agh.lroza.actors.scala.LoginActor.{Logout, Login, ValidateToken}
 class LoginActor extends Actor {
   var loggedUsers = Set[UUID]()
 
-  def login(username: String, password: String): Either[Problem, UUID] = {
-    if (username == password) {
-      val token = UUID.randomUUID()
-      loggedUsers = loggedUsers + token
-      Right(token)
-    } else {
-      Left(ProblemS("Wrong password"))
-    }
+  def login(username: String, password: String): Either[Problem, UUID] = if (username == password) {
+    val token = UUID.randomUUID()
+    loggedUsers = loggedUsers + token
+    Right(token)
+  } else {
+    Left(ProblemS("Wrong password"))
   }
 
-  def logout(token: UUID): Option[Problem] = {
-    if (loggedUsers.contains(token)) {
-      loggedUsers = loggedUsers - token
-      None
-    } else {
-      Some(ProblemS("Invalid token"))
-    }
+
+  def logout(token: UUID): Option[Problem] = if (loggedUsers.contains(token)) {
+    loggedUsers = loggedUsers - token
+    None
+  } else {
+    Some(ProblemS("Invalid token"))
   }
+
 
   def returnProblem(returnOption: Boolean, originalSender: UntypedChannel, problem: Problem) {
     if (returnOption) {

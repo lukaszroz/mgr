@@ -13,16 +13,15 @@ class NoticesActor(loginActor: ActorRef) extends Actor {
 
   def listNoticesIds = Right(ids)
 
-  def addNotice(title: String, message: String) = {
-    if (titles.contains(title)) {
-      Left(ProblemS("Topic with title '" + title + "' already exists"))
-    } else {
-      titles = titles + title;
-      val actorId = new ActorId(Actor.actorOf(new NoticeActor(self, loginActor, NoticeS(title, message))).start())
-      ids = ids + actorId
-      Right(actorId)
-    }
+  def addNotice(title: String, message: String) = if (titles.contains(title)) {
+    Left(ProblemS("Topic with title '" + title + "' already exists"))
+  } else {
+    titles = titles + title;
+    val actorId = new ActorId(Actor.actorOf(new NoticeActor(self, loginActor, NoticeS(title, message))).start())
+    ids = ids + actorId
+    Right(actorId)
   }
+
 
   protected def receive = {
     case ListNoticesIds(token) =>

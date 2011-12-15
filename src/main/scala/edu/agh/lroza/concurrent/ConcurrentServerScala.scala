@@ -36,11 +36,9 @@ class ConcurrentServerScala extends NoticeBoardServer {
     Some(ProblemS("Invalid token"))
   }
 
-
   def listNoticesIds(token: UUID) = validateTokenEither(token) {
     Right(notices.keySet.toSet)
   }
-
 
   def addNotice(token: UUID, title: String, message: String) = validateTokenEither(token) {
     titleSet.putIfAbsent(title, false) match {
@@ -52,14 +50,12 @@ class ConcurrentServerScala extends NoticeBoardServer {
     }
   }
 
-
   def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
     notices.get(id) match {
       case Some(n) => Right(n)
       case None => Left(ProblemS("There is no such notice '" + id + "'"))
     }
   }
-
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
     if (titleSet.putIfAbsent(title, true).isDefined &&
@@ -79,7 +75,6 @@ class ConcurrentServerScala extends NoticeBoardServer {
       }
     }
   }
-
 
   def deleteNotice(token: UUID, id: Id) = if (!loggedUsers.contains(token)) {
     Some(ProblemS("Invalid token"))

@@ -22,107 +22,84 @@ class CustomLocksServerScala extends NoticeBoardServer {
     }
   }
 
-  def login(username: String, password: String) = {
-    if (username.equals(password)) {
-      val token = UUID.randomUUID()
-      lock(loggedUsersLock.writeLock()) {
-        loggedUsers += token
-      }
-      Right(token)
-    } else {
-      Left(ProblemS("Wrong password"))
-    }
-
-  }
-
-  def logout(token: UUID) = {
+  def login(username: String, password: String) = if (username.equals(password)) {
+    val token = UUID.randomUUID()
     lock(loggedUsersLock.writeLock()) {
-      if (loggedUsers.remove(token)) {
-        None
-      } else {
-        Some(ProblemS("Invalid token"))
-      }
+      loggedUsers += token
+    }
+    Right(token)
+  } else {
+    Left(ProblemS("Wrong password"))
+  }
+
+  def logout(token: UUID) = lock(loggedUsersLock.writeLock()) {
+    if (loggedUsers.remove(token)) {
+      None
+    } else {
+      Some(ProblemS("Invalid token"))
     }
   }
 
-  def listNoticesIds(token: UUID) = {
-    validateTokenEither(token) {
-      lock(noticesLock.readLock()) {
-        Right(notices.keySet.toSet)
-      }
+  def listNoticesIds(token: UUID) = validateTokenEither(token) {
+    lock(noticesLock.readLock()) {
+      Right(notices.keySet.toSet)
     }
   }
 
-  def addNotice(token: UUID, title: String, message: String) = {
-    validateTokenEither(token) {
-      val notice = NoticeS(title, message)
-      if (lock(noticesLock.readLock())(notices.contains(TitleId(title)))) {
+  def addNotice(token: UUID, title: String, message: String) = validateTokenEither(token) {
+    val notice = NoticeS(title, message)
+    if (lock(noticesLock.readLock())(notices.contains(TitleId(title)))) {
+      Left(ProblemS("Topic with title '" + title + "' already exists"))
+    } else {
+      val stored = lock(noticesLock.writeLock()) {
+        notices.getOrElseUpdate(TitleId(title), notice)
+      }
+      Either.cond(notice.equals(stored), TitleId(title), ProblemS("Topic with title '" + title + "' already exists"))
+    }
+  }
+
+  def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
+    lock(noticesLock.readLock()) {
+      notices.get(id)
+    } match {
+      case Some(n) => Right(n)
+      case None => Left(ProblemS("There is no such notice '" + id + "'"))
+    }
+  }
+
+  def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
+    lock(noticesLock.writeLock()) {
+      val noticeOption = notices.get(id)
+      if (noticeOption.isEmpty) {
+        Left(ProblemS("There is no such notice '" + id + "'"))
+      } else if (noticeOption.get.title != title && notices.contains(TitleId(title))) {
         Left(ProblemS("Topic with title '" + title + "' already exists"))
       } else {
-        val stored = lock(noticesLock.writeLock()) {
-          notices.getOrElseUpdate(TitleId(title), notice)
+        if (noticeOption.get.title != title) {
+          notices.remove(id).get
         }
-        Either.cond(notice.equals(stored), TitleId(title), ProblemS("Topic with title '" + title + "' already exists"))
+        notices += TitleId(title) -> NoticeS(title, message)
+        Right(TitleId(title))
       }
     }
   }
 
-  def getNotice(token: UUID, id: Id) = {
-    validateTokenEither(token) {
-      lock(noticesLock.readLock()) {
-        notices.get(id)
-      } match {
-        case Some(n) => Right(n)
-        case None => Left(ProblemS("There is no such notice '" + id + "'"))
-      }
+  def deleteNotice(token: UUID, id: Id) = if (!isValid(token)) {
+    Some(ProblemS("Invalid token"))
+  } else {
+    lock(noticesLock.writeLock()) {
+      notices.remove(id)
+    } match {
+      case Some(_) => None
+      case None => Some(ProblemS("There is no such notice '" + id + "'"))
     }
   }
 
-  def updateNotice(token: UUID, id: Id, title: String, message: String) = {
-    validateTokenEither(token) {
-      lock(noticesLock.writeLock()) {
-        val noticeOption = notices.get(id)
-        if (noticeOption.isEmpty) {
-          Left(ProblemS("There is no such notice '" + id + "'"))
-        } else if (noticeOption.get.title != title && notices.contains(TitleId(title))) {
-          Left(ProblemS("Topic with title '" + title + "' already exists"))
-        } else {
-          if (noticeOption.get.title != title) {
-            notices.remove(id).get
-          }
-          notices += TitleId(title) -> NoticeS(title, message)
-          Right(TitleId(title))
-        }
-      }
-    }
-  }
+  def isValid(token: UUID) = lock(loggedUsersLock.readLock())(loggedUsers.contains(token))
 
-  def deleteNotice(token: UUID, id: Id) = {
-    validateTokenOption(token) {
-      lock(noticesLock.writeLock()) {
-        notices.remove(id)
-      } match {
-        case Some(_) => None
-        case None => Some(ProblemS("There is no such notice '" + id + "'"))
-      }
-    }
-  }
-
-  private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]): Either[Problem, T] = {
-    val isValid = lock(loggedUsersLock.readLock())(loggedUsers.contains(token))
-    if (!isValid) {
-      Left(ProblemS("Invalid token"))
-    } else {
-      code
-    }
-  }
-
-  private def validateTokenOption(token: UUID)(code: => Option[Problem]): Option[Problem] = {
-    val isValid = lock(loggedUsersLock.readLock())(loggedUsers.contains(token))
-    if (!isValid) {
-      Some(ProblemS("Invalid token"))
-    } else {
-      code
-    }
+  private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]) = if (!isValid(token)) {
+    Left(ProblemS("Invalid token"))
+  } else {
+    code
   }
 }
