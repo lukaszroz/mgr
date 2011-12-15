@@ -126,7 +126,3 @@ class CustomLocksServerScala extends NoticeBoardServer {
     }
   }
 }
-
-object CustomLocksServerScala {
-  def apply() = new CustomLocksServerScala
-}

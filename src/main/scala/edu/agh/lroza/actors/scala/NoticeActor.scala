@@ -3,7 +3,6 @@ package edu.agh.lroza.actors.scala
 import java.util.UUID
 import akka.actor.{UntypedChannel, ActorRef, Actor}
 import edu.agh.lroza.common.NoticeS
-import akka.event.EventHandler
 import edu.agh.lroza.actors.scala.LoginActor.ValidateToken
 import edu.agh.lroza.actors.scala.NoticeActor._
 import edu.agh.lroza.actors.scala.NoticesActor.{DeleteId, ReserveTitle, ActorId, FreeTitle}
@@ -23,7 +22,6 @@ class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Noti
     case ValidatedGetNotice(originalSender) =>
       originalSender ! Right(notice)
     case UpdateNotice(token, title, message) =>
-      EventHandler.debug(this, "notice=" + notice)
       loginActor ! ValidateToken(token, self.channel, false, ValidatedTokenUpdateNotice(self.channel, title, message))
     case ValidatedTokenUpdateNotice(originalSender, title, message) =>
       if (title == notice.title) {

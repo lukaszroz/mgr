@@ -7,7 +7,7 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class CustomLocksServerScalaTest extends FunSuite with FunSuiteServerBeahaviors {
-  def server = CustomLocksServerScala();
+  def server = new CustomLocksServerScala();
 
   basicLogInLogOut(server)
   noticesManagement(server)

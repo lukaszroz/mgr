@@ -116,7 +116,3 @@ class ImmutableServerScala extends NoticeBoardServer {
     }
   }
 }
-
-object ImmutableServerScala {
-  def apply() = new ImmutableServerScala
-}

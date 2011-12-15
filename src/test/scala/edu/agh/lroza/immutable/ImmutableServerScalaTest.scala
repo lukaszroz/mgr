@@ -7,7 +7,7 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ImmutableServerScalaTest extends FunSuite with FunSuiteServerBeahaviors {
-  def server = ImmutableServerScala();
+  def server = new ImmutableServerScala();
 
   basicLogInLogOut(server)
   noticesManagement(server)

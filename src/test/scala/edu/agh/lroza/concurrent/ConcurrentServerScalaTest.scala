@@ -7,7 +7,7 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ConcurrentServerScalaTest extends FunSuite with FunSuiteServerBeahaviors {
-  def server = ConcurrentServerScala();
+  def server = new ConcurrentServerScala();
 
   basicLogInLogOut(server)
   noticesManagement(server)

@@ -3,7 +3,6 @@ package edu.agh.lroza.actors.scala
 import java.util.UUID
 import akka.actor.{UntypedChannel, ActorRef, Actor}
 import edu.agh.lroza.common.{NoticeS, Id, ProblemS}
-import akka.event.EventHandler
 import edu.agh.lroza.actors.scala.LoginActor.ValidateToken
 import edu.agh.lroza.actors.scala.NoticesActor._
 
@@ -35,7 +34,6 @@ class NoticesActor(loginActor: ActorRef) extends Actor {
     case ValidatedAddNotice(originalSender, title, message) =>
       originalSender ! addNotice(title, message)
     case ReserveTitle(title, originalSender, message) =>
-      EventHandler.debug(this, "titles=" + titles + "; title=" + title)
       if (titles.contains(title)) {
         originalSender ! Left(ProblemS("Topic with title '" + title + "' already exists"))
       } else {

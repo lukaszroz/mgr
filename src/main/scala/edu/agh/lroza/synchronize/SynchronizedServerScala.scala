@@ -96,7 +96,3 @@ class SynchronizedServerScala extends NoticeBoardServer {
     }
   }
 }
-
-object SynchronizedServerScala {
-  def apply() = new SynchronizedServerScala
-}

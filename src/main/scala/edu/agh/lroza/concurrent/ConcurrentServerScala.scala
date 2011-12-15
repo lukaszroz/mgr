@@ -116,8 +116,3 @@ class ConcurrentServerScala extends NoticeBoardServer {
     }
   }
 }
-
-object ConcurrentServerScala {
-  def apply() = new ConcurrentServerScala
-}
-

@@ -3,7 +3,6 @@ package edu.agh.lroza.actors
 import _root_.java.util.UUID
 import edu.agh.lroza.common._
 import akka.actor.Actor
-import akka.event.EventHandler
 import akka.dispatch.Future
 import scala.LoginActor.{Logout, Login}
 import scala.NoticeActor.{DeleteNotice, UpdateNotice, GetNotice}
@@ -28,7 +27,6 @@ class ActorServerScala extends NoticeBoardServer {
   def listNoticesIds(token: UUID): Either[Problem, Set[Id]] =
     (noticesActor ? ListNoticesIds(token)).as[Either[Problem, Set[Id]]] match {
       case Some(answer) =>
-        EventHandler.debug(this, "listNoticesIds(" + token + ")=" + answer)
         answer
       case None => Left(ProblemS("Timeout occured"))
     }
@@ -36,7 +34,6 @@ class ActorServerScala extends NoticeBoardServer {
   def addNotice(token: UUID, title: String, message: String): Either[Problem, Id] =
     (noticesActor ? AddNotice(token, title, message)).as[Either[Problem, Id]] match {
       case Some(answer) =>
-        EventHandler.debug(this, "addNotice(" + title + ", " + message + ")=" + answer)
         answer
       case None => Left(ProblemS("Timeout occured"))
     }
@@ -47,7 +44,6 @@ class ActorServerScala extends NoticeBoardServer {
       if (actorRef.tryTell(GetNotice(token))(future)) {
         future.as[Either[Problem, Notice]] match {
           case Some(answer) =>
-            EventHandler.debug(this, "getNotice(" + id + ")=" + answer)
             answer
           case None => Left(ProblemS("Timeout occured"))
         }
@@ -63,7 +59,6 @@ class ActorServerScala extends NoticeBoardServer {
       if (actorRef.tryTell(UpdateNotice(token, title, message))(future)) {
         future.as[Either[Problem, Id]] match {
           case Some(answer) =>
-            EventHandler.debug(this, "updateNotice(" + id + ", " + title + ", " + message + ")=" + answer)
             answer
           case None => Left(ProblemS("Timeout occured"))
         }
@@ -79,7 +74,6 @@ class ActorServerScala extends NoticeBoardServer {
       if (actorRef.tryTell(DeleteNotice(token))(future)) {
         future.as[Option[Problem]] match {
           case Some(answer) =>
-            EventHandler.debug(this, "deleteNotice(" + id + ")=" + answer)
             answer
           case None => Some(ProblemS("Timeout occured"))
         }
@@ -88,8 +82,4 @@ class ActorServerScala extends NoticeBoardServer {
       }
     case _ => Some(ProblemS("There is no such notice '" + id + "'"))
   }
-}
-
-object ActorServerScala {
-  def apply() = new ActorServerScala
 }

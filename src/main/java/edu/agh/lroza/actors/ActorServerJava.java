@@ -147,6 +147,4 @@ public class ActorServerJava implements NoticeBoardServer {
             return some(newProblem("There is no such notice '" + id + "'"));
         }
     }
-
-
 }

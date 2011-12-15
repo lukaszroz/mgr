@@ -7,7 +7,7 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ActorServerScalaTest extends FunSuite with FunSuiteServerBeahaviors {
-  def server = ActorServerScala();
+  def server = new ActorServerScala();
 
   basicLogInLogOut(server)
   noticesManagement(server)
