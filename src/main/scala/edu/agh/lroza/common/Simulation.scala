@@ -8,6 +8,8 @@ import edu.agh.lroza.actors.{ActorServerJava, ActorServerScala}
 import org.clapper.argot.{ArgotUsageException, ArgotParser, ArgotConverters}
 import scala.Predef._
 import java.util.concurrent.{TimeUnit, CyclicBarrier}
+import java.util.Locale
+import collection.mutable.ListBuffer
 
 
 object Simulation {
@@ -68,52 +70,71 @@ object Simulation {
       server.addNotice(token, "testTitle%05d".format(i), "testMessage%4d".format(i))
     }
 
-    val barrier = new CyclicBarrier(users.value.getOrElse(1))
+    var start = 0L
+    val barrier = new CyclicBarrier(users.value.getOrElse(1), new Runnable {
+      def run() {
+        start = System.nanoTime();
+      }
+    })
     val writePeriod = writeEvery.value.getOrElse(0)
 
     val clients = for (i <- 1 to users.value.getOrElse(1)) yield new User(server, i, barrier, writePeriod).start()
 
-
+    println("--------warmup------------------------")
     for (i <- 1 to 5) {
       for (j <- warmup) {
-        clients.map(_ ! User.Run(j))
+        clients.map(_ !! User.Run(j)).map(_())
         Thread.sleep(100);
       }
     }
 
-    def runSimulation(i: Int) {
-      println("--------------------------------------")
+    case class Result(totalDuration: Long, totalCount: Long, sumOfDurations: Long);
 
+    val results = ListBuffer[Result]()
+
+    def runSimulation(i: Int) {
+      println("--------simulation:%02d------------------".format(i))
       server.listNoticesIds(token).right.get.foreach(server.deleteNotice(token, _))
       for (i <- 1 to n * 10) {
         server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
       }
 
-      val start = System.nanoTime()
-      val results = clients.map(_ !! User.Run(n)).map(_())
+      val currentResults = clients.map(_ !! User.Run(n)).map(_())
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
 
-      val totalCount = results.map(_ match {
-        case (_, _, count: Long, _, _, _) => count
-      }).sum.asInstanceOf[Double]
+      val totalCount = currentResults.map(_ match {
+        case (_, _, count: Long, _, _, _, _) => count
+      }).sum
 
-      results.foreach {
+      val sumOfDurations = currentResults.map(_ match {
+        case (_, duration: Long, _, _, _, _, _) => duration
+      }).sum
+
+      currentResults.foreach {
         _ match {
-          case (logPrefix: String, duration: Long, count: Long, problemCount: Long, addCount: Long, updateCount: Long) =>
+          case (logPrefix, duration: Long, count: Long, problemCount, addCount, updateCount, size) =>
             println("%s duration: %5dms, count: %d, avg: %5.2fμs".format(logPrefix,
               TimeUnit.MICROSECONDS.toMillis(duration), count, (duration.asInstanceOf[Double]) / count))
-            println("%s %5d problems, %5d adds, %5d updates".format(logPrefix, problemCount, addCount, updateCount))
+            println("%s %5d problems, %5d adds, %5d updates, size: %8d".format(logPrefix, problemCount, addCount, updateCount, size))
         }
       }
       println("[simulation%2d] total duration:  %6dms".format(i, duration))
-      println("[simulation%2d] total throughput: %5.2frq/ms".format(i, totalCount / duration))
+      println("[simulation%2d] total throughput: %5.2frq/ms".format(i, totalCount * 1.0 / duration))
+      println("[simulation%2d] avg response time: %5.2fμs".format(i, sumOfDurations * 1.0 / totalCount))
+      results += Result(duration, totalCount, sumOfDurations)
     }
 
+    Locale.setDefault(Locale.US)
+
     runSimulation(0)
-    println("--------------------------------------")
 
     for (i <- 1 to 20) {
       runSimulation(i)
+    }
+
+    println("duration [ms]; count [1]; sum of durations [μs]")
+    results.foreach {
+      case Result(a, b, c) => println("%d;%d;%d".format(a, b, c))
     }
 
     clients.map(_ !! User.Stop).foreach(f => println(f()))

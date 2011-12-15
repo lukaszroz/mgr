@@ -15,16 +15,22 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
 
   var nextWriteAction: () => Unit = null
 
+  def problem(p: Problem) = {
+    problemCount += 1
+    -1
+  }
+
   val addNotice: () => Unit = () => {
     addCount += 1
-    server.addNotice(token, getTitle(addCount), "message" + logPrefix)
+    size += server.addNotice(token, getTitle(addCount), "message" + logPrefix).fold(problem, _.toString.length())
     postCall()
     nextWriteAction = updateNotice
   }
 
   val updateNotice: () => Unit = () => {
     updateCount += 1
-    server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
+    size += server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
+      .fold(problem, _.toString.length())
     postCall()
     nextWriteAction = deleteNotice
   }
@@ -41,7 +47,7 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   }
 
   val deleteNotice: () => Unit = () => {
-    server.deleteNotice(token, currentId)
+    size += server.deleteNotice(token, currentId).map(problem(_)).getOrElse(1)
     postCall()
     nextWriteAction = addNotice
   }
@@ -59,7 +65,7 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   def postCall() {
     count += 1
     if (count % 100 == 50) {
-      server.logout(token)
+      server.logout(token).foreach(_ => problemCount += 1)
       token = server.login(logPrefix, logPrefix).right.get
       postCall()
       postCall()
@@ -72,7 +78,7 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   }
 
   def end() {
-    server.logout(token)
+    server.logout(token).foreach(_ => problemCount += 1)
     postCall()
     duration += TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startTime)
     if (writeEvery > 1) {
@@ -103,15 +109,12 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
             postCall()
             for (id <- noticesIds) {
               currentId = id
-              size += (server.getNotice(token, id) match {
-                case Right(notice) => notice.toString.length()
-                case Left(problem) => problemCount += 1; -1
-              })
+              size += server.getNotice(token, id).fold(problem, _.toString.length())
               postCall()
             }
           }
           end();
-          reply(logPrefix, duration, count, problemCount, addCount, updateCount)
+          reply(logPrefix, duration, count, problemCount, addCount, updateCount, size)
       }
   }
 }
