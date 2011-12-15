@@ -94,14 +94,15 @@ object Simulation {
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
 
       val totalCount = results.map(_ match {
-        case (_, _, count: Long, _) => count
+        case (_, _, count: Long, _, _, _) => count
       }).sum.asInstanceOf[Double]
 
       results.foreach {
         _ match {
-          case (logPrefix: String, duration: Long, count: Long, problemCount: Long) =>
+          case (logPrefix: String, duration: Long, count: Long, problemCount: Long, addCount: Long, updateCount: Long) =>
             println("%s duration: %5dms, count: %d, avg: %5.2fμs".format(logPrefix,
               TimeUnit.MICROSECONDS.toMillis(duration), count, (duration.asInstanceOf[Double]) / count))
+            println("%s %5d problems, %5d adds, %5d updates".format(logPrefix, problemCount, addCount, updateCount))
         }
       }
       println("[simulation%2d] total duration:  %6dms".format(i, duration))

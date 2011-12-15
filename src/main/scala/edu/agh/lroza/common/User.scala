@@ -16,25 +16,27 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   var nextWriteAction: () => Unit = null
 
   val addNotice: () => Unit = () => {
-    server.addNotice(token, getTitle, "message" + logPrefix)
+    addCount += 1
+    server.addNotice(token, getTitle(addCount), "message" + logPrefix)
     postCall()
     nextWriteAction = updateNotice
   }
 
   val updateNotice: () => Unit = () => {
-    server.updateNotice(token, currentId, getTitle, "message" + logPrefix)
+    updateCount += 1
+    server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
     postCall()
     nextWriteAction = deleteNotice
   }
 
-  var modifyCount = 0L
+  var addCount = 0L
+  var updateCount = 0L
 
-  def getTitle = {
-    modifyCount += 1
-    if (modifyCount % 11 == 0) {
-      "testTitle%05d".format(modifyCount)
+  def getTitle(cout: Long) = {
+    if (count % 10 == 0) {
+      "testTitle%05d".format(count)
     } else {
-      "title%s%07d".format(logPrefix, modifyCount)
+      "title%s%07d".format(logPrefix, count)
     }
   }
 
@@ -50,7 +52,8 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
     duration = 0L
     count = 0L
     problemCount = 0L
-    modifyCount = 0L
+    addCount = 0L
+    updateCount = 0L
   }
 
   def postCall() {
@@ -108,7 +111,7 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
             }
           }
           end();
-          reply(logPrefix, duration, count, problemCount)
+          reply(logPrefix, duration, count, problemCount, addCount, updateCount)
       }
   }
 }
