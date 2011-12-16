@@ -1,4 +1,4 @@
-package edu.agh.lroza.common
+﻿package edu.agh.lroza.common
 
 import edu.agh.lroza.synchronize.{SynchronizedServerJava, SynchronizedServerScala}
 import edu.agh.lroza.locks.{CustomLocksServerJava, CustomLocksServerScala}
@@ -136,14 +136,14 @@ object Simulation {
       runSimulation(i)
     }
 
+    clients.map(_ !! User.Stop).foreach(f => println(f()))
+
+    akka.actor.Actor.registry.shutdownAll()
+
     println("duration [ms]; count [1]; sum of durations [μs]")
     results.foreach {
       case Result(a, b, c) => println("%d;%d;%d".format(a, b, c))
     }
-
-    clients.map(_ !! User.Stop).foreach(f => println(f()))
-
-    akka.actor.Actor.registry.shutdownAll()
   }
 
   def main(args: Array[String]) {
