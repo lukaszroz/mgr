@@ -1,4 +1,4 @@
-﻿package edu.agh.lroza.common
+package edu.agh.lroza.common
 
 import edu.agh.lroza.synchronize.{SynchronizedServerJava, SynchronizedServerScala}
 import edu.agh.lroza.locks.{CustomLocksServerJava, CustomLocksServerScala}
