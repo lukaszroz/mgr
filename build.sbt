@@ -1,15 +1,14 @@
 import AssemblyKeys._
 
-// put this at the top of the file
-
 seq(assemblySettings: _*)
 
-//skip this project sources
-//assembleArtifact in packageBin := false
+jarName := "simulation.jar"
+
+mainClass in assembly := Some("edu.agh.lroza.common.Simulation")
 
 test in assembly := {}
 
-name := "hello"
+name := "simulation"
 
 version := "1.0"
 
@@ -26,5 +25,7 @@ libraryDependencies ++= Seq(
   "org.mockito" % "mockito-core" % "1.8.5",
   "com.google.guava" % "guava" % "10.0.1",
   "org.clapper" %% "argot" % "0.3.5",
-  "junit" % "junit" % "4.8" % "test"
+  "junit" % "junit" % "4.8" % "test",
+  "org.scalatest" %% "scalatest" % "1.6.1" % "test",
+  "com.novocode" % "junit-interface" % "0.7" % "test"
 )

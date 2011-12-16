@@ -23,8 +23,8 @@ object Simulation {
       "2011, Lukasz W. Rozycki")
   )
 
-  val server = parser.option[NoticeBoardServer](List("s", "server"), "server", """Server implemention to use. Possible values:
-  SS - SynchronizedServerScala (default)
+  val server = parser.parameter[NoticeBoardServer]("SERVER_TYPE", """Server implemention to use. Possible values:
+  SS - SynchronizedServerScala
   SJ - SynchronizedServerJava
   LS - CustomLocksServerScala
   LJ - CustomLocksServerJava
@@ -33,7 +33,7 @@ object Simulation {
   IM - ImmutableServerScala
   AS - ActorServerScala
   AJ - ActorServerJava
-  """) {
+  """, false) {
     case ("SS", _) => new SynchronizedServerScala
     case ("SJ", _) => new SynchronizedServerJava
     case ("LS", _) => new CustomLocksServerScala
@@ -47,15 +47,19 @@ object Simulation {
 
   val full = parser.flag[Boolean](List("f", "full"), "Full simulation takes longer")
 
-  val users = parser.option[Int](List("u", "users-count"), "users-count", "Number of concurrent users. Default 1.")
+  val quick = parser.flag[Boolean](List("q", "quick"), "Quick simulation is very short")
 
-  val writeEvery = parser.option[Int](List("w", "write-period"), "write-period", "How many read requests there is for " +
+  val users = parser.option[Int](List("u", "users-count"), "count", "Number of concurrent users. Default 1.")
+
+  val writeEvery = parser.option[Int](List("w", "write-period"), "period", "How many read requests there is for " +
     "one write request. The higher the number, the lower whe write request frequency. Default 0 (no writes).")
 
   def runSimulation(server: NoticeBoardServer) {
     println("Starting simulation with server: " + server.getClass.getName)
 
-    val (warmup, n) = if (full.value.getOrElse(false)) {
+    val (warmup, n) = if (quick.value.getOrElse(false)) {
+      (Seq(1, 10), 10)
+    } else if (full.value.getOrElse(false)) {
       (Seq(1, 10, 100, 1000), 1000)
     } else {
       (Seq(1, 10, 100), 100)
@@ -145,7 +149,7 @@ object Simulation {
   def main(args: Array[String]) {
     try {
       parser.parse(args)
-      runSimulation(server.value.getOrElse(new SynchronizedServerScala))
+      runSimulation(server.value.get)
     } catch {
       case e: ArgotUsageException => println(e.message)
     }
