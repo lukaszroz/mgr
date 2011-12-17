@@ -66,7 +66,7 @@ object Simulation {
     }
 
     val token = server.login("master", "master").right.get
-    for (i <- 1 to n * 10) {
+    for (i <- 1 to n * 100) {
       server.login("a", "a")
     }
 
@@ -79,23 +79,25 @@ object Simulation {
 
     val writePeriod = writeEvery.value.getOrElse(0)
 
-    val clients = for (i <- 1 to users.value.getOrElse(1)) yield new User(server, i, barrier, writePeriod).start()
+    val userCount = users.value.getOrElse(1)
+    val clients = for (i <- 1 to userCount) yield new User(server, i, barrier, writePeriod).start()
 
     def reset() {
       server.listNoticesIds(token).right.get.foreach(server.deleteNotice(token, _))
       for (i <- 1 to n * 100) {
         server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
       }
+      System.gc()
     }
 
     println("--------warmup------------------------")
     for (i <- 1 to 5) {
       for (j <- warmup) {
-        println("i: %d, j: %d".format(i, j))
-        clients.map(_ !! User.Run(j)).map(_())
-        Thread.sleep(100);
-        println("resetting notice board...")
         reset()
+        val n = if (writePeriod == 10) (j / 10) + 1 else j
+        //        println("i: %d, n: %d".format(i, n))
+        clients.map(_ !! User.Run(n)).map(_())
+        Thread.sleep(100);
       }
     }
 
@@ -106,8 +108,8 @@ object Simulation {
     def runSimulation(i: Int) {
       println("--------simulation:%02d------------------".format(i))
       reset()
-
-      val currentResults = clients.map(_ !! User.Run(n)).map(_())
+      val nn = if (writePeriod == 10) (n / userCount * 2) else n
+      val currentResults = clients.map(_ !! User.Run(nn)).map(_())
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
 
       val totalCount = currentResults.map(_ match {

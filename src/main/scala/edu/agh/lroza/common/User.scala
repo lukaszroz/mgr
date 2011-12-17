@@ -10,7 +10,7 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   var token = UUID.randomUUID()
   val logPrefix = "[client%2d]".format(number)
   var startTime, duration, count, problemCount = 0L
-  var occypySum = 0D
+  var occupySum = 0D
   var currentId: Id = null
   val shift = if (writeEvery == 0) 0 else number * 11 % writeEvery
 
@@ -96,9 +96,13 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   }
 
   def occupyProcessor(i: Int) {
-    import scala.math._
-    for (i <- 1 to i) {
-      occypySum += sqrt(pow(sin(20), tan(40))).ceil
+    //    import scala.math._
+    import java.lang.Math._
+    var c = 0
+    while (c < i) {
+      occupySum += sqrt(pow(11, 0.11)).ceil
+      //      occypySum += sqrt(11).ceil
+      c += 12
     }
   }
 
