@@ -9,7 +9,8 @@ import java.util.concurrent.{CyclicBarrier, TimeUnit}
 class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
   var token = UUID.randomUUID()
   val logPrefix = "[client%2d]".format(number)
-  var size, startTime, duration, count, problemCount = 0L
+  var startTime, duration, count, problemCount = 0L
+  var occypySum = 0D
   var currentId: Id = null
   val shift = if (writeEvery == 0) 0 else number * 11 % writeEvery
 
@@ -22,16 +23,16 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
 
   val addNotice: () => Unit = () => {
     addCount += 1
-    size += server.addNotice(token, getTitle(addCount), "message" + logPrefix).fold(problem, _.toString.length())
-    postCall()
+    val length = server.addNotice(token, getTitle(addCount), "message" + logPrefix).fold(problem, _.toString.length())
+    postCall(length)
     nextWriteAction = updateNotice
   }
 
   val updateNotice: () => Unit = () => {
     updateCount += 1
-    size += server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
+    val length = server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
       .fold(problem, _.toString.length())
-    postCall()
+    postCall(length)
     nextWriteAction = deleteNotice
   }
 
@@ -47,8 +48,8 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   }
 
   val deleteNotice: () => Unit = () => {
-    size += server.deleteNotice(token, currentId).map(problem(_)).getOrElse(1)
-    postCall()
+    val length = server.deleteNotice(token, currentId).map(problem(_)).getOrElse(1)
+    postCall(length)
     nextWriteAction = addNotice
   }
 
@@ -62,24 +63,24 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
     updateCount = 0L
   }
 
-  def postCall() {
+  def postCall(length: Int) {
+    occupyProcessor(length)
     count += 1
     if (count % 100 == 50) {
       server.logout(token).foreach(_ => problemCount += 1)
       token = server.login(logPrefix, logPrefix).right.get
-      postCall()
-      postCall()
+      postCall(1)
+      postCall(token.toString.length())
     }
 
     if (writeEvery > 1 && count % writeEvery == shift) {
       nextWriteAction()
-      postCall()
     }
   }
 
   def end() {
     server.logout(token).foreach(_ => problemCount += 1)
-    postCall()
+    postCall(1)
     duration += TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startTime)
     if (writeEvery > 1) {
       while (nextWriteAction != addNotice) {
@@ -91,7 +92,14 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
   def begin() {
     startTime = System.nanoTime();
     token = server.login(logPrefix, logPrefix).right.get
-    postCall()
+    postCall(token.toString.length())
+  }
+
+  def occupyProcessor(i: Int) {
+    import scala.math._
+    for (i <- 1 to i) {
+      occypySum += sqrt(pow(sin(20), tan(40))).ceil
+    }
   }
 
   def act() {
@@ -106,15 +114,15 @@ class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, write
           begin()
           for (i <- 1 to times) {
             val noticesIds = server.listNoticesIds(token).right.get
-            postCall()
+            postCall(noticesIds.toString().length())
             for (id <- noticesIds) {
               currentId = id
-              size += server.getNotice(token, id).fold(problem, _.toString.length())
-              postCall()
+              val length = server.getNotice(token, id).fold(problem, _.toString.length())
+              postCall(length)
             }
           }
           end();
-          reply(logPrefix, duration, count, problemCount, addCount, updateCount, size)
+          reply(logPrefix, duration, count, problemCount, addCount, updateCount)
       }
   }
 }

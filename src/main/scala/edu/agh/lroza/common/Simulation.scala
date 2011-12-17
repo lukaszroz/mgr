@@ -58,20 +58,16 @@ object Simulation {
     println("Starting simulation with server: " + server.getClass.getName)
 
     val (warmup, n) = if (quick.value.getOrElse(false)) {
-      (Seq(1, 10), 10)
+      (Seq(1), 1)
     } else if (full.value.getOrElse(false)) {
-      (Seq(1, 10, 100, 1000), 1000)
-    } else {
       (Seq(1, 10, 100), 100)
+    } else {
+      (Seq(1, 10), 10)
     }
 
     val token = server.login("master", "master").right.get
     for (i <- 1 to n * 10) {
       server.login("a", "a")
-    }
-
-    for (i <- 1 to n * 10) {
-      server.addNotice(token, "testTitle%05d".format(i), "testMessage%4d".format(i))
     }
 
     var start = 0L
@@ -80,15 +76,26 @@ object Simulation {
         start = System.nanoTime();
       }
     })
+
     val writePeriod = writeEvery.value.getOrElse(0)
 
     val clients = for (i <- 1 to users.value.getOrElse(1)) yield new User(server, i, barrier, writePeriod).start()
 
+    def reset() {
+      server.listNoticesIds(token).right.get.foreach(server.deleteNotice(token, _))
+      for (i <- 1 to n * 100) {
+        server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
+      }
+    }
+
     println("--------warmup------------------------")
     for (i <- 1 to 5) {
       for (j <- warmup) {
+        println("i: %d, j: %d".format(i, j))
         clients.map(_ !! User.Run(j)).map(_())
         Thread.sleep(100);
+        println("resetting notice board...")
+        reset()
       }
     }
 
@@ -98,28 +105,25 @@ object Simulation {
 
     def runSimulation(i: Int) {
       println("--------simulation:%02d------------------".format(i))
-      server.listNoticesIds(token).right.get.foreach(server.deleteNotice(token, _))
-      for (i <- 1 to n * 10) {
-        server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
-      }
+      reset()
 
       val currentResults = clients.map(_ !! User.Run(n)).map(_())
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
 
       val totalCount = currentResults.map(_ match {
-        case (_, _, count: Long, _, _, _, _) => count
+        case (_, _, count: Long, _, _, _) => count
       }).sum
 
       val sumOfDurations = currentResults.map(_ match {
-        case (_, duration: Long, _, _, _, _, _) => duration
+        case (_, duration: Long, _, _, _, _) => duration
       }).sum
 
       currentResults.foreach {
         _ match {
-          case (logPrefix, duration: Long, count: Long, problemCount, addCount, updateCount, size) =>
+          case (logPrefix, duration: Long, count: Long, problemCount, addCount, updateCount) =>
             println("%s duration: %5dms, count: %d, avg: %5.2fμs".format(logPrefix,
               TimeUnit.MICROSECONDS.toMillis(duration), count, (duration.asInstanceOf[Double]) / count))
-            println("%s %5d problems, %5d adds, %5d updates, size: %8d".format(logPrefix, problemCount, addCount, updateCount, size))
+            println("%s %5d problems, %5d adds, %5d updates".format(logPrefix, problemCount, addCount, updateCount))
         }
       }
       println("[simulation%2d] total duration:  %6dms".format(i, duration))
@@ -144,6 +148,7 @@ object Simulation {
     results.foreach {
       case Result(a, b, c) => println("%d;%d;%d".format(a, b, c))
     }
+    sys.exit()
   }
 
   def main(args: Array[String]) {
