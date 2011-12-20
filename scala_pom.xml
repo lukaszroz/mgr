@@ -10,6 +10,7 @@
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
         <testSourceDirectory>src/test/scala</testSourceDirectory>
+        <outputDirectory>target/scala-2.9.1</outputDirectory>
     </build>
     <properties>
         <sonar.language>scala</sonar.language>
