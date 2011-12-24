@@ -53,10 +53,7 @@ class ImmutableServerScala extends NoticeBoardServerScala {
   }
 
   def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
-    notices.get(id) match {
-      case Some(n) => Right(n)
-      case None => Left(Problem("There is no such notice '" + id + "'"))
-    }
+    notices.get(id).map(Right(_)).getOrElse(Left(Problem("There is no such notice '" + id + "'")))
   }
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
