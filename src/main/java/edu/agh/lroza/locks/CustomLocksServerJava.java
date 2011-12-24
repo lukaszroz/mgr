@@ -48,10 +48,12 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
         }
     }
 
-    private boolean isValid(UUID token) {
+    private void validateToken(UUID token) throws ProblemException {
         loggedUsersLock.readLock().lock();
         try {
-            return loggedUsers.contains(token);
+            if (!loggedUsers.contains(token)) {
+                throw new ProblemException("Invalid token");
+            }
         } finally {
             loggedUsersLock.readLock().unlock();
         }
@@ -84,101 +86,83 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
     }
 
     public Set<Id> listNoticesIds(UUID token) throws ProblemException {
-        if (isValid(token)) {
-            noticesLock.readLock().lock();
-            try {
-                return ImmutableSet.copyOf(notices.keySet());
-            } finally {
-                noticesLock.readLock().unlock();
-            }
-        } else {
-            throw new ProblemException("Invalid token");
+        validateToken(token);
+        noticesLock.readLock().lock();
+        try {
+            return ImmutableSet.copyOf(notices.keySet());
+        } finally {
+            noticesLock.readLock().unlock();
         }
     }
 
     @Override
     public Id addNotice(UUID token, String title, String message) throws ProblemException {
-        if (isValid(token)) {
-            Id id = new TitleId(title);
-            noticesLock.writeLock().lock();
-            try {
-                if (notices.get(id) == null) {
-                    notices.put(id, new Notice(title, message));
-                    return id;
-                } else {
-                    throw new ProblemException("Topic with title '" + title + "' already exists");
-                }
-            } finally {
-                noticesLock.writeLock().unlock();
+        validateToken(token);
+        Id id = new TitleId(title);
+        noticesLock.writeLock().lock();
+        try {
+            if (notices.get(id) == null) {
+                notices.put(id, new Notice(title, message));
+                return id;
+            } else {
+                throw new ProblemException("Topic with title '" + title + "' already exists");
             }
-        } else {
-            throw new ProblemException("Invalid token");
+        } finally {
+            noticesLock.writeLock().unlock();
         }
     }
 
     @Override
     public Notice getNotice(UUID token, Id id) throws ProblemException {
-        if (isValid(token)) {
-            Notice notice;
-            noticesLock.readLock().lock();
-            try {
-                notice = notices.get(id);
-            } finally {
-                noticesLock.readLock().unlock();
-            }
+        validateToken(token);
+        noticesLock.readLock().lock();
+        try {
+            Notice notice = notices.get(id);
             if (notice == null) {
                 throw new ProblemException("There is no such notice '" + id + "'");
             } else {
                 return notice;
             }
-        } else {
-            throw new ProblemException("Invalid token");
+        } finally {
+            noticesLock.readLock().unlock();
         }
     }
 
     @Override
     public Id updateNotice(UUID token, Id id, String title, String message) throws ProblemException {
-        if (isValid(token)) {
-            noticesLock.writeLock().lock();
-            try {
-                final Notice notice = notices.get(id);
-                if (notice == null) {
-                    throw new ProblemException("There is no such notice '" + id + "'");
+        validateToken(token);
+        noticesLock.writeLock().lock();
+        try {
+            final Notice notice = notices.get(id);
+            if (notice == null) {
+                throw new ProblemException("There is no such notice '" + id + "'");
+            } else {
+                Id newId = new TitleId(title);
+                if (!newId.equals(id) && notices.containsKey(newId)) {
+                    throw new ProblemException("Topic with title '" + title + "' already exists");
                 } else {
-                    Id newId = new TitleId(title);
-                    if (!newId.equals(id) && notices.containsKey(newId)) {
-                        throw new ProblemException("Topic with title '" + title + "' already exists");
-                    } else {
-                        if (!newId.equals(id)) {
-                            notices.remove(id);
-                        }
-                        notices.put(newId, new Notice(title, message));
-                        return newId;
+                    if (!newId.equals(id)) {
+                        notices.remove(id);
                     }
+                    notices.put(newId, new Notice(title, message));
+                    return newId;
                 }
-            } finally {
-                noticesLock.writeLock().unlock();
             }
-        } else {
-            throw new ProblemException("Invalid token");
+        } finally {
+            noticesLock.writeLock().unlock();
         }
     }
 
     @Override
     public void deleteNotice(UUID token, Id id) throws ProblemException {
-        if (isValid(token)) {
-            Notice notice;
-            noticesLock.writeLock().lock();
-            try {
-                notice = notices.remove(id);
-            } finally {
-                noticesLock.writeLock().unlock();
-            }
-            if (notice == null) {
+        validateToken(token);
+        noticesLock.writeLock().lock();
+        try {
+            if (notices.remove(id) == null) {
                 throw new ProblemException("There is no such notice '" + id + "'");
             }
-        } else {
-            throw new ProblemException("Invalid token");
+        } finally {
+            noticesLock.writeLock().unlock();
         }
     }
 }
