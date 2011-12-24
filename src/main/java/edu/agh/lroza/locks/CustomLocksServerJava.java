@@ -101,7 +101,7 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
         Id id = new TitleId(title);
         noticesLock.writeLock().lock();
         try {
-            if (notices.get(id) == null) {
+            if (!notices.containsKey(id)) {
                 notices.put(id, new Notice(title, message));
                 return id;
             } else {

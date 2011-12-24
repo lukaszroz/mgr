@@ -14,10 +14,10 @@ class CustomLocksServerScala extends NoticeBoardServerScala {
 
   case class TitleId(id: String) extends Id
 
-  private def lock[T](lock: Lock)(block: => T): T = {
+  private def lock[T](lock: Lock)(code: => T): T = {
     lock.lock()
     try {
-      block
+      code
     } finally {
       lock.unlock()
     }
@@ -62,37 +62,33 @@ class CustomLocksServerScala extends NoticeBoardServerScala {
   def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
     lock(noticesLock.readLock()) {
       notices.get(id)
-    } match {
-      case Some(n) => Right(n)
-      case None => Left(Problem("There is no such notice '" + id + "'"))
-    }
+    }.map(Right(_)).getOrElse(Left(Problem("There is no such notice '" + id + "'")))
   }
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
     lock(noticesLock.writeLock()) {
-      val noticeOption = notices.get(id)
-      if (noticeOption.isEmpty) {
-        Left(Problem("There is no such notice '" + id + "'"))
-      } else if (noticeOption.get.title != title && notices.contains(TitleId(title))) {
-        Left(Problem("Topic with title '" + title + "' already exists"))
-      } else {
-        if (noticeOption.get.title != title) {
-          notices.remove(id).get
+      notices.get(id).map {
+        notice => if (notice.title != title && notices.contains(TitleId(title))) {
+          Left(Problem("Topic with title '" + title + "' already exists"))
+        } else {
+          if (notice.title != title) {
+            notices.remove(id).get
+          }
+          notices += TitleId(title) -> Notice(title, message)
+          Right(TitleId(title))
         }
-        notices += TitleId(title) -> Notice(title, message)
-        Right(TitleId(title))
-      }
+
+      }.getOrElse(Left(Problem("There is no such notice '" + id + "'")))
     }
   }
 
   def deleteNotice(token: UUID, id: Id) = if (!isValid(token)) {
     Some(Problem("Invalid token"))
   } else {
-    lock(noticesLock.writeLock()) {
-      notices.remove(id)
-    } match {
-      case Some(_) => None
-      case None => Some(Problem("There is no such notice '" + id + "'"))
+    if (lock(noticesLock.writeLock())(notices.remove(id).isDefined)) {
+      None
+    } else {
+      Some(Problem("There is no such notice '" + id + "'"))
     }
   }
 
