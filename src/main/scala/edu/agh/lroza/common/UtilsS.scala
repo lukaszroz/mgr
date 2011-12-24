@@ -4,5 +4,5 @@ import akka.dispatch.Future
 
 
 object UtilsS {
-  def getFuture = Future.channel()
+  def getFuture[T] = Future.channel(50)
 }

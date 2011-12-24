@@ -5,6 +5,7 @@ import javacommon.{ProblemException, NoticeBoardServerJava}
 import java.util.UUID
 import collection.JavaConversions
 import scalacommon.{Notice, Problem, NoticeBoardServerScala}
+import akka.dispatch.FutureTimeoutException
 
 class NoticeBoardServerJavaWrapper(val server: NoticeBoardServerJava) extends NoticeBoardServerScala {
   def login(username: String, password: String) = try {
@@ -50,5 +51,6 @@ class NoticeBoardServerJavaWrapper(val server: NoticeBoardServerJava) extends No
     None
   } catch {
     case problem: ProblemException => Some(Problem(problem.getMessage))
+    case timeout: FutureTimeoutException => Some(Problem("Timeout occured"))
   }
 }
