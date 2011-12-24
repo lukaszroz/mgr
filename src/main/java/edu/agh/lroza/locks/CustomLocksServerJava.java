@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.common.Notice;
-import edu.agh.lroza.common.NoticeBoardServer;
+import edu.agh.lroza.common.NoticeBoardServerScala;
 import edu.agh.lroza.common.NoticeJ;
 import edu.agh.lroza.common.Problem;
 import edu.agh.lroza.common.UtilsJ;
@@ -25,7 +25,7 @@ import scala.collection.Set;
 
 import com.google.common.collect.ImmutableSet;
 
-public class CustomLocksServerJava implements NoticeBoardServer {
+public class CustomLocksServerJava implements NoticeBoardServerScala {
     private java.util.Set<UUID> loggedUsers = new HashSet<>();
     private java.util.Map<Id, Notice> notices = new HashMap<>();
 

@@ -5,7 +5,7 @@ import collection.mutable._
 import edu.agh.lroza.common._
 import actors.threadpool.locks.{Lock, ReentrantReadWriteLock}
 
-class CustomLocksServerScala extends NoticeBoardServer {
+class CustomLocksServerScala extends NoticeBoardServerScala {
   val loggedUsers = Set[UUID]()
   val notices = Map[Id, Notice]()
   val loggedUsersLock = new ReentrantReadWriteLock

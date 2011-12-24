@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.common.Notice;
-import edu.agh.lroza.common.NoticeBoardServer;
+import edu.agh.lroza.common.NoticeBoardServerScala;
 import edu.agh.lroza.common.NoticeJ;
 import edu.agh.lroza.common.Problem;
 import edu.agh.lroza.common.UtilsJ;
@@ -24,7 +24,7 @@ import scala.collection.Set;
 
 import com.google.common.collect.ImmutableSet;
 
-public class ConcurrentServerJava implements NoticeBoardServer {
+public class ConcurrentServerJava implements NoticeBoardServerScala {
     private final Object o = new Object();
     private ConcurrentMap<UUID, Object> loggedUsers = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Boolean> titleSet = new ConcurrentHashMap<>();
@@ -158,7 +158,8 @@ public class ConcurrentServerJava implements NoticeBoardServer {
             if (previous == null) {
                 return some(newProblem("There is no such notice '" + id + "'"));
             } else {
-                while (titleSet.containsKey(previous.title()) && !titleSet.remove(previous.title(), false)) ;
+                while (titleSet.containsKey(previous.title()) && !titleSet.remove(previous.title(), false)) {
+                }
                 return none();
             }
         } else {

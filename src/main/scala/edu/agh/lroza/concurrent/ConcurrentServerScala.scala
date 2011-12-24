@@ -8,7 +8,7 @@ import java.lang.Object
 import java.util.concurrent.atomic.AtomicLong
 
 
-class ConcurrentServerScala extends NoticeBoardServer {
+class ConcurrentServerScala extends NoticeBoardServerScala {
   val o = new Object
   val loggedUsers = asScalaConcurrentMap(new ConcurrentHashMap[UUID, Object]())
   val titleSet = asScalaConcurrentMap(new ConcurrentHashMap[String, Boolean]())

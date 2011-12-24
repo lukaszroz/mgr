@@ -9,7 +9,7 @@ import actors.threadpool.{TimeUnit, Executors}
 trait FunSuiteServerBeahaviors extends ShouldMatchers {
   this: FunSuite =>
 
-  def basicLogInLogOut(serverFactory: => NoticeBoardServer) {
+  def basicLogInLogOut(serverFactory: => NoticeBoardServerScala) {
     test("should not be able to login with wrong credentials") {
       serverFactory.login("a", "b") should be('left)
     }
@@ -49,7 +49,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
     }
   }
 
-  def noticesManagement(serverFactory: => NoticeBoardServer) {
+  def noticesManagement(serverFactory: => NoticeBoardServerScala) {
     test("should be able to add, get, update and remove notice") {
       val server = serverFactory
       val title = "title"

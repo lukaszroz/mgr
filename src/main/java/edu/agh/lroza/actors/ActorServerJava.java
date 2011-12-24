@@ -24,7 +24,7 @@ import edu.agh.lroza.actors.java.NoticesActor;
 import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.common.Notice;
-import edu.agh.lroza.common.NoticeBoardServer;
+import edu.agh.lroza.common.NoticeBoardServerScala;
 import edu.agh.lroza.common.Problem;
 import edu.agh.lroza.common.UtilsS;
 import scala.Either;
@@ -33,9 +33,9 @@ import scala.collection.Set;
 import scala.reflect.Manifest;
 import scala.reflect.Manifest$;
 
-public class ActorServerJava implements NoticeBoardServer {
-    ActorRef loginActor = Actors.actorOf(LoginActor.class);
-    ActorRef noticesActor = Actors.actorOf(new Creator<Actor>() {
+public class ActorServerJava implements NoticeBoardServerScala {
+    private ActorRef loginActor = Actors.actorOf(LoginActor.class);
+    private ActorRef noticesActor = Actors.actorOf(new Creator<Actor>() {
         public Actor create() {
             return new NoticesActor(loginActor);
         }

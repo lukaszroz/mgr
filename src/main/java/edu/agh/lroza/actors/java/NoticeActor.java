@@ -21,23 +21,40 @@ public class NoticeActor extends UntypedActor {
     private final ActorRef loginActor;
     private Notice notice;
 
-    public static class GetNotice {
+    private static interface NoticeActorMessage {
+        void handleMessage(NoticeActor instance);
+    }
+
+    public static class GetNotice implements NoticeActorMessage {
+
         private final UUID token;
 
         public GetNotice(UUID token) {
             this.token = token;
         }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            ActorRef context = instance.getContext();
+            instance.loginActor.tell(new ValidateToken(token, context.channel(), false,
+                    new ValidatedGetNotice(context.channel())), context);
+        }
     }
 
-    public static class ValidatedGetNotice {
+    public static class ValidatedGetNotice implements NoticeActorMessage {
         private final UntypedChannel originalSender;
 
         public ValidatedGetNotice(UntypedChannel originalSender) {
             this.originalSender = originalSender;
         }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            originalSender.tell(right(instance.notice));
+        }
     }
 
-    public static class UpdateNotice {
+    public static class UpdateNotice implements NoticeActorMessage {
         private final UUID token;
         private final String title;
         private final String message;
@@ -47,9 +64,16 @@ public class NoticeActor extends UntypedActor {
             this.title = title;
             this.message = message;
         }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            ActorRef context = instance.getContext();
+            instance.loginActor.tell(new ValidateToken(token, context.channel(), false,
+                    new ValidatedTokenUpdateNotice(context.channel(), this)), context);
+        }
     }
 
-    private static class ValidatedTokenUpdateNotice {
+    private static class ValidatedTokenUpdateNotice implements NoticeActorMessage {
         private final UntypedChannel originalSender;
         private final UpdateNotice updateNotice;
 
@@ -57,9 +81,20 @@ public class NoticeActor extends UntypedActor {
             this.originalSender = originalSender;
             this.updateNotice = updateNotice;
         }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            if (updateNotice.title.equals(instance.notice.title())) {
+                instance.notice = new NoticeJ(updateNotice.title, updateNotice.message);
+                originalSender.tell(right(new ActorId(instance.getContext())));
+            } else {
+                instance.noticesActor.tell(new ReserveTitle(updateNotice.title, originalSender,
+                        new ReservedTitleUpdateNotice(this)), instance.getContext());
+            }
+        }
     }
 
-    private static class ReservedTitleUpdateNotice {
+    private static class ReservedTitleUpdateNotice implements NoticeActorMessage {
         private final UntypedChannel originalSender;
         private final UpdateNotice updateNotice;
 
@@ -67,21 +102,44 @@ public class NoticeActor extends UntypedActor {
             this.originalSender = validatedTokenUpdateNotice.originalSender;
             this.updateNotice = validatedTokenUpdateNotice.updateNotice;
         }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            String oldTitle = instance.notice.title();
+            instance.notice = new NoticeJ(updateNotice.title, updateNotice.message);
+            instance.noticesActor.tell(new FreeTitle(oldTitle));
+            originalSender.tell(right(new ActorId(instance.getContext())));
+        }
     }
 
-    public static class DeleteNotice {
+    public static class DeleteNotice implements NoticeActorMessage {
         private final UUID token;
 
         public DeleteNotice(UUID token) {
             this.token = token;
         }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            ActorRef context = instance.getContext();
+            instance.loginActor.tell(new ValidateToken(token, context.channel(), true,
+                    new ValidatedDeleteNotice(context.channel())), context);
+        }
     }
 
-    private static class ValidatedDeleteNotice {
+    private static class ValidatedDeleteNotice implements NoticeActorMessage {
         private final UntypedChannel originalSender;
 
         public ValidatedDeleteNotice(UntypedChannel originalSender) {
             this.originalSender = originalSender;
+        }
+
+        @Override
+        public void handleMessage(NoticeActor instance) {
+            instance.noticesActor.tell(new RemoveId(new ActorId(instance.getContext())));
+            instance.noticesActor.tell(new FreeTitle(instance.notice.title()));
+            originalSender.tell(none());
+            instance.getContext().stop();
         }
     }
 
@@ -92,44 +150,8 @@ public class NoticeActor extends UntypedActor {
     }
 
     public void onReceive(Object message) throws Exception {
-        if (message instanceof GetNotice) {
-            GetNotice getNotice = (GetNotice) message;
-            loginActor.tell(new ValidateToken(getNotice.token, getContext().channel(), false,
-                    new ValidatedGetNotice(getContext().channel())), getContext());
-        } else if (message instanceof ValidatedGetNotice) {
-            ValidatedGetNotice validatedGetNotice = (ValidatedGetNotice) message;
-            validatedGetNotice.originalSender.tell(right(notice));
-        } else if (message instanceof UpdateNotice) {
-            UpdateNotice updateNotice = (UpdateNotice) message;
-            loginActor.tell(new ValidateToken(updateNotice.token, getContext().channel(), false,
-                    new ValidatedTokenUpdateNotice(getContext().channel(), updateNotice)), getContext());
-        } else if (message instanceof ValidatedTokenUpdateNotice) {
-            ValidatedTokenUpdateNotice validatedTokenUpdateNotice = (ValidatedTokenUpdateNotice) message;
-            UpdateNotice updateNotice = validatedTokenUpdateNotice.updateNotice;
-            if (updateNotice.title.equals(notice.title())) {
-                notice = new NoticeJ(updateNotice.title, updateNotice.message);
-                validatedTokenUpdateNotice.originalSender.tell(right(new ActorId(getContext())));
-            } else {
-                noticesActor.tell(new ReserveTitle(updateNotice.title, validatedTokenUpdateNotice.originalSender,
-                        new ReservedTitleUpdateNotice(validatedTokenUpdateNotice)), getContext());
-            }
-        } else if (message instanceof ReservedTitleUpdateNotice) {
-            ReservedTitleUpdateNotice reservedTitleUpdateNotice = (ReservedTitleUpdateNotice) message;
-            UpdateNotice updateNotice = reservedTitleUpdateNotice.updateNotice;
-            String oldTitle = notice.title();
-            notice = new NoticeJ(updateNotice.title, updateNotice.message);
-            noticesActor.tell(new FreeTitle(oldTitle));
-            reservedTitleUpdateNotice.originalSender.tell(right(new ActorId(getContext())));
-        } else if (message instanceof DeleteNotice) {
-            DeleteNotice deleteNotice = (DeleteNotice) message;
-            loginActor.tell(new ValidateToken(deleteNotice.token, getContext().channel(), true,
-                    new ValidatedDeleteNotice(getContext().channel())), getContext());
-        } else if (message instanceof ValidatedDeleteNotice) {
-            ValidatedDeleteNotice validatedDeleteNotice = (ValidatedDeleteNotice) message;
-            noticesActor.tell(new RemoveId(new ActorId(getContext())));
-            noticesActor.tell(new FreeTitle(notice.title()));
-            validatedDeleteNotice.originalSender.tell(none());
-            getContext().stop();
+        if (message instanceof NoticeActorMessage) {
+            ((NoticeActorMessage) message).handleMessage(this);
         } else {
             throw new IllegalArgumentException("Unknown message: " + message);
         }

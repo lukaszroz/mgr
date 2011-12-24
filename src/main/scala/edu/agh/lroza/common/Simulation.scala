@@ -23,7 +23,7 @@ object Simulation {
       "2011, Lukasz W. Rozycki")
   )
 
-  val server = parser.parameter[NoticeBoardServer]("SERVER_TYPE", """Server implemention to use. Possible values:
+  val server = parser.parameter[NoticeBoardServerScala]("SERVER_TYPE", """Server implemention to use. Possible values:
   SS - SynchronizedServerScala
   SJ - SynchronizedServerJava
   LS - CustomLocksServerScala
@@ -54,7 +54,7 @@ object Simulation {
   val writeEvery = parser.option[Int](List("w", "write-period"), "period", "How many read requests there is for " +
     "one write request. The higher the number, the lower whe write request frequency. Default 0 (no writes).")
 
-  def runSimulation(server: NoticeBoardServer) {
+  def runSimulation(server: NoticeBoardServerScala) {
     println("Starting simulation with server: " + server.getClass.getName)
 
     val (warmup, n) = if (quick.value.getOrElse(false)) {

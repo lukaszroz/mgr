@@ -13,7 +13,7 @@ import java.util.UUID;
 
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.common.Notice;
-import edu.agh.lroza.common.NoticeBoardServer;
+import edu.agh.lroza.common.NoticeBoardServerScala;
 import edu.agh.lroza.common.NoticeJ;
 import edu.agh.lroza.common.Problem;
 import edu.agh.lroza.common.UtilsJ;
@@ -24,7 +24,7 @@ import scala.collection.Set;
 
 import com.google.common.collect.ImmutableSet;
 
-public class SynchronizedServerJava implements NoticeBoardServer {
+public class SynchronizedServerJava implements NoticeBoardServerScala {
     private java.util.Set<UUID> loggedUsers = Collections.synchronizedSet(new HashSet<UUID>());
     private java.util.Map<Id, Notice> notices = Collections.synchronizedMap(new HashMap<Id, Notice>());
 

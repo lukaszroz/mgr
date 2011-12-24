@@ -6,7 +6,7 @@ import edu.agh.lroza.common.User.{Stop, Run}
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
 
 
-class User(server: NoticeBoardServer, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
+class User(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
   var token = UUID.randomUUID()
   val logPrefix = "[client%2d]".format(number)
   var startTime, duration, count, problemCount = 0L

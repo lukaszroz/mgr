@@ -4,7 +4,7 @@ import java.util.UUID
 import collection.mutable._
 import edu.agh.lroza.common._
 
-class SynchronizedServerScala extends NoticeBoardServer {
+class SynchronizedServerScala extends NoticeBoardServerScala {
   val loggedUsers = new HashSet[UUID] with SynchronizedSet[UUID]
   val notices = new HashMap[Id, Notice] with SynchronizedMap[Id, Notice]
 

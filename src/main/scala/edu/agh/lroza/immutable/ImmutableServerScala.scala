@@ -3,7 +3,7 @@ package edu.agh.lroza.immutable
 import java.util.UUID
 import edu.agh.lroza.common._
 
-class ImmutableServerScala extends NoticeBoardServer {
+class ImmutableServerScala extends NoticeBoardServerScala {
   @volatile var loggedUsers = Set[UUID]()
   val loggedUsersLock = new Object
   @volatile var notices = Map[Id, Notice]()
