@@ -6,6 +6,7 @@ import collection.JavaConversions.asScalaConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import java.lang.Object
 import java.util.concurrent.atomic.AtomicLong
+import edu.agh.lroza.scalacommon._
 
 
 class ConcurrentServerScala extends NoticeBoardServerScala {
@@ -27,13 +28,13 @@ class ConcurrentServerScala extends NoticeBoardServerScala {
     loggedUsers.put(token, o)
     Right(token)
   } else {
-    Left(ProblemS("Wrong password"))
+    Left(Problem("Wrong password"))
   }
 
   def logout(token: UUID) = if (loggedUsers.remove(token).isDefined) {
     None
   } else {
-    Some(ProblemS("Invalid token"))
+    Some(Problem("Invalid token"))
   }
 
   def listNoticesIds(token: UUID) = validateTokenEither(token) {
@@ -44,25 +45,25 @@ class ConcurrentServerScala extends NoticeBoardServerScala {
     titleSet.putIfAbsent(title, false) match {
       case None =>
         val id = LongId()
-        notices.put(id, NoticeS(title, message))
+        notices.put(id, Notice(title, message))
         Right(id)
-      case Some(_) => Left(ProblemS("Topic with title '" + title + "' already exists"))
+      case Some(_) => Left(Problem("Topic with title '" + title + "' already exists"))
     }
   }
 
   def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
     notices.get(id) match {
       case Some(n) => Right(n)
-      case None => Left(ProblemS("There is no such notice '" + id + "'"))
+      case None => Left(Problem("There is no such notice '" + id + "'"))
     }
   }
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
     if (titleSet.putIfAbsent(title, true).isDefined &&
       !(notices.get(id).exists(_.title == title) && !titleSet.put(title, true).getOrElse(false))) {
-      Left(ProblemS("Topic with title '" + title + "' already exists or was recently changed"))
+      Left(Problem("Topic with title '" + title + "' already exists or was recently changed"))
     } else {
-      notices.replace(id, NoticeS(title, message)) match {
+      notices.replace(id, Notice(title, message)) match {
         case Some(old) =>
           titleSet.put(title, false)
           if (title != old.title) {
@@ -71,24 +72,24 @@ class ConcurrentServerScala extends NoticeBoardServerScala {
           Right(id)
         case None =>
           titleSet.remove(title)
-          Left(ProblemS("There is no such notice '" + id + "'"))
+          Left(Problem("There is no such notice '" + id + "'"))
       }
     }
   }
 
   def deleteNotice(token: UUID, id: Id) = if (!loggedUsers.contains(token)) {
-    Some(ProblemS("Invalid token"))
+    Some(Problem("Invalid token"))
   } else {
     notices.remove(id) match {
       case Some(n) =>
         while (titleSet.contains(n.title) && !titleSet.remove(n.title, false)) {}
         None
-      case None => Some(ProblemS("There is no such notice '" + id + "'"))
+      case None => Some(Problem("There is no such notice '" + id + "'"))
     }
   }
 
   private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]) = if (!loggedUsers.contains(token)) {
-    Left(ProblemS("Invalid token"))
+    Left(Problem("Invalid token"))
   } else {
     code
   }

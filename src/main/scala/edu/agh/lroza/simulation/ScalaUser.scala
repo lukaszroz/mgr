@@ -1,12 +1,14 @@
-package edu.agh.lroza.common
+package edu.agh.lroza.simulation
 
 import java.util.UUID
 import actors.Actor
-import edu.agh.lroza.common.User.{Stop, Run}
+import edu.agh.lroza.simulation.ScalaUser.{Stop, Run}
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
+import edu.agh.lroza.common.Id
+import edu.agh.lroza.scalacommon.{Problem, NoticeBoardServerScala}
 
 
-class User(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
+class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
   var token = UUID.randomUUID()
   val logPrefix = "[client%2d]".format(number)
   var startTime, duration, count, problemCount = 0L
@@ -131,7 +133,7 @@ class User(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarrier, 
   }
 }
 
-object User {
+object ScalaUser {
 
   case class Run(times: Int)
 

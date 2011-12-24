@@ -2,6 +2,7 @@ package edu.agh.lroza.immutable
 
 import java.util.UUID
 import edu.agh.lroza.common._
+import edu.agh.lroza.scalacommon._
 
 class ImmutableServerScala extends NoticeBoardServerScala {
   @volatile var loggedUsers = Set[UUID]()
@@ -18,7 +19,7 @@ class ImmutableServerScala extends NoticeBoardServerScala {
     }
     Right(token)
   } else {
-    Left(ProblemS("Wrong password"))
+    Left(Problem("Wrong password"))
   }
 
   def logout(token: UUID) = {
@@ -30,7 +31,7 @@ class ImmutableServerScala extends NoticeBoardServerScala {
     if (changed) {
       None
     } else {
-      Some(ProblemS("Invalid token"))
+      Some(Problem("Invalid token"))
     }
   }
 
@@ -39,14 +40,14 @@ class ImmutableServerScala extends NoticeBoardServerScala {
   }
 
   def addNotice(token: UUID, title: String, message: String) = validateTokenEither(token) {
-    val notice = NoticeS(title, message)
+    val notice = Notice(title, message)
     val id = TitleId(title)
     noticesLock.synchronized {
       if (!notices.contains(id)) {
         notices = notices + (id -> notice)
         Right(id)
       } else {
-        Left(ProblemS("Topic with title '" + title + "' already exists"))
+        Left(Problem("Topic with title '" + title + "' already exists"))
       }
     }
   }
@@ -54,20 +55,20 @@ class ImmutableServerScala extends NoticeBoardServerScala {
   def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
     notices.get(id) match {
       case Some(n) => Right(n)
-      case None => Left(ProblemS("There is no such notice '" + id + "'"))
+      case None => Left(Problem("There is no such notice '" + id + "'"))
     }
   }
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
     noticesLock.synchronized {
       if (!notices.contains(id)) {
-        Left(ProblemS("There is no such notice '" + id + "'"))
+        Left(Problem("There is no such notice '" + id + "'"))
       } else {
         val newId = TitleId(title)
         if (notices.contains(newId) && id != newId) {
-          Left(ProblemS("Topic with title '" + title + "' already exists"))
+          Left(Problem("Topic with title '" + title + "' already exists"))
         } else {
-          notices = notices - id + (newId -> NoticeS(title, message))
+          notices = notices - id + (newId -> Notice(title, message))
           Right(newId)
         }
       }
@@ -75,20 +76,20 @@ class ImmutableServerScala extends NoticeBoardServerScala {
   }
 
   def deleteNotice(token: UUID, id: Id) = if (!loggedUsers.contains(token)) {
-    Some(ProblemS("Invalid token"))
+    Some(Problem("Invalid token"))
   } else {
     noticesLock.synchronized {
       if (notices.contains(id)) {
         notices = notices - id
         None
       } else {
-        Some(ProblemS("There is no such notice '" + id + "'"))
+        Some(Problem("There is no such notice '" + id + "'"))
       }
     }
   }
 
   private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]) = if (!loggedUsers.contains(token)) {
-    Left(ProblemS("Invalid token"))
+    Left(Problem("Invalid token"))
   } else {
     code
   }

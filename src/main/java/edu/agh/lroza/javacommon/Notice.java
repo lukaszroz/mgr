@@ -1,19 +1,19 @@
-package edu.agh.lroza.common;
+package edu.agh.lroza.javacommon;
 
-public class NoticeJ implements Notice {
+public class Notice {
     private final String title;
     private final String message;
 
-    public NoticeJ(String title, String message) {
+    public Notice(String title, String message) {
         this.title = title;
         this.message = message;
     }
 
-    public String title() {
+    public String getTitle() {
         return title;
     }
 
-    public String message() {
+    public String getMessage() {
         return message;
     }
 

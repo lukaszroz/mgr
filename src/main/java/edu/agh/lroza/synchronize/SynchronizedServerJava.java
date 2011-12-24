@@ -1,30 +1,18 @@
 package edu.agh.lroza.synchronize;
 
-import static edu.agh.lroza.common.UtilsJ.left;
-import static edu.agh.lroza.common.UtilsJ.newProblem;
-import static edu.agh.lroza.common.UtilsJ.none;
-import static edu.agh.lroza.common.UtilsJ.right;
-import static edu.agh.lroza.common.UtilsJ.some;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.UUID;
 
 import edu.agh.lroza.common.Id;
-import edu.agh.lroza.common.Notice;
-import edu.agh.lroza.common.NoticeBoardServerScala;
-import edu.agh.lroza.common.NoticeJ;
-import edu.agh.lroza.common.Problem;
-import edu.agh.lroza.common.UtilsJ;
-import scala.Either;
-import scala.Option;
-import scala.collection.JavaConversions;
-import scala.collection.Set;
+import edu.agh.lroza.javacommon.Notice;
+import edu.agh.lroza.javacommon.NoticeBoardServerJava;
+import edu.agh.lroza.javacommon.ProblemException;
 
 import com.google.common.collect.ImmutableSet;
 
-public class SynchronizedServerJava implements NoticeBoardServerScala {
+public class SynchronizedServerJava implements NoticeBoardServerJava {
     private java.util.Set<UUID> loggedUsers = Collections.synchronizedSet(new HashSet<UUID>());
     private java.util.Map<Id, Notice> notices = Collections.synchronizedMap(new HashMap<Id, Notice>());
 
@@ -55,98 +43,88 @@ public class SynchronizedServerJava implements NoticeBoardServerScala {
         }
     }
 
-    public Either<Problem, UUID> login(String username, String password) {
+    @Override
+    public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {
             UUID token = UUID.randomUUID();
             loggedUsers.add(token);
-            return UtilsJ.right(token);
+            return token;
         } else {
-            return left(newProblem("Wrong password"));
-        }
-    }
-
-    public Option<Problem> logout(UUID token) {
-        if (loggedUsers.remove(token)) {
-            return Option.empty();
-        } else {
-            return UtilsJ.some(newProblem("Invalid token"));
-        }
-    }
-
-    public Either<Problem, Set<Id>> listNoticesIds(UUID token) {
-        if (loggedUsers.contains(token)) {
-            return UtilsJ.right((Set<Id>) JavaConversions.asScalaSet(ImmutableSet.copyOf(notices.keySet())));
-        } else {
-            return left(newProblem("Invalid token"));
+            throw new ProblemException("Wrong password");
         }
     }
 
     @Override
-    public Either<Problem, Id> addNotice(UUID token, String title, String message) {
-        if (loggedUsers.contains(token)) {
-            Id id = new TitleId(title);
-            synchronized (notices) {
-                if (notices.get(id) == null) {
-                    notices.put(id, new NoticeJ(title, message));
-                    return UtilsJ.right(id);
-                } else {
-                    return left(newProblem("Topic with title '" + title + "' already exists"));
-                }
+    public void logout(UUID token) throws ProblemException {
+        if (!loggedUsers.remove(token)) {
+            throw new ProblemException("Invalid token");
+        }
+    }
+
+    private void validateToken(UUID token) throws ProblemException {
+        if (!loggedUsers.contains(token)) {
+            throw new ProblemException("Invalid token");
+        }
+    }
+
+    @Override
+    public java.util.Set<Id> listNoticesIds(UUID token) throws ProblemException {
+        validateToken(token);
+        return ImmutableSet.copyOf(notices.keySet());
+    }
+
+    @Override
+    public Id addNotice(UUID token, String title, String message) throws ProblemException {
+        validateToken(token);
+        Id id = new TitleId(title);
+        synchronized (notices) {
+            if (notices.get(id) == null) {
+                notices.put(id, new Notice(title, message));
+                return id;
+            } else {
+                throw new ProblemException("Topic with title '" + title + "' already exists");
             }
-        } else {
-            return left(newProblem("Invalid token"));
         }
     }
 
     @Override
-    public Either<Problem, Notice> getNotice(UUID token, Id id) {
-        if (loggedUsers.contains(token)) {
+    public Notice getNotice(UUID token, Id id) throws ProblemException {
+        validateToken(token);
+        Notice notice = notices.get(id);
+        if (notice == null) {
+            throw new ProblemException("There is no such notice '" + id + "'");
+        } else {
+            return notice;
+        }
+    }
+
+    @Override
+    public Id updateNotice(UUID token, Id id, String title, String message) throws ProblemException {
+        validateToken(token);
+        synchronized (notices) {
             Notice notice = notices.get(id);
             if (notice == null) {
-                return left(newProblem("There is no such notice '" + id + "'"));
+                throw new ProblemException("There is no such notice '" + id + "'");
             } else {
-                return UtilsJ.right(notice);
-            }
-        } else {
-            return left(newProblem("Invalid token"));
-        }
-    }
-
-    @Override
-    public Either<Problem, Id> updateNotice(UUID token, Id id, String title, String message) {
-        if (loggedUsers.contains(token)) {
-            synchronized (notices) {
-                final Notice notice = notices.get(id);
-                if (notice == null) {
-                    return left(newProblem("There is no such notice '" + id + "'"));
+                Id newId = new TitleId(title);
+                if (!newId.equals(id) && notices.containsKey(newId)) {
+                    throw new ProblemException("Topic with title '" + title + "' already exists");
                 } else {
-                    Id newId = new TitleId(title);
-                    if (!newId.equals(id) && notices.containsKey(newId)) {
-                        return left(newProblem("Topic with title '" + title + "' already exists"));
-                    } else {
-                        if (!newId.equals(id)) {
-                            notices.remove(id);
-                        }
-                        notices.put(newId, new NoticeJ(title, message));
-                        return right(newId);
+                    if (!newId.equals(id)) {
+                        notices.remove(id);
                     }
+                    notices.put(newId, new Notice(title, message));
+                    return newId;
                 }
             }
-        } else {
-            return left(newProblem("Invalid token"));
         }
     }
 
     @Override
-    public Option<Problem> deleteNotice(UUID token, Id id) {
-        if (loggedUsers.contains(token)) {
-            if (notices.remove(id) == null) {
-                return some(newProblem("There is no such notice '" + id + "'"));
-            } else {
-                return none();
-            }
-        } else {
-            return some(newProblem("Invalid token"));
+    public void deleteNotice(UUID token, Id id) throws ProblemException {
+        validateToken(token);
+        if (notices.remove(id) == null) {
+            throw new ProblemException("There is no such notice '" + id + "'");
         }
     }
 }

@@ -1,19 +1,8 @@
-package edu.agh.lroza.common
+package edu.agh.lroza.scalacommon
 
 import java.util.UUID
 import scala.collection.Set
-
-trait Problem {
-  def message: String
-}
-
-trait Notice {
-  def title: String
-
-  def message: String
-}
-
-trait Id
+import edu.agh.lroza.common.Id
 
 trait NoticeBoardServerScala {
   def login(username: String, password: String): Either[Problem, UUID]

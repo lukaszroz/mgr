@@ -1,9 +1,9 @@
 package edu.agh.lroza.actors.scala
 
 import java.util.UUID
-import edu.agh.lroza.common.{ProblemS, Problem}
 import akka.actor.{UntypedChannel, Actor}
 import edu.agh.lroza.actors.scala.LoginActor.{Logout, Login, ValidateToken}
+import edu.agh.lroza.scalacommon.Problem
 
 class LoginActor extends Actor {
   var loggedUsers = Set[UUID]()
@@ -13,7 +13,7 @@ class LoginActor extends Actor {
     loggedUsers = loggedUsers + token
     Right(token)
   } else {
-    Left(ProblemS("Wrong password"))
+    Left(Problem("Wrong password"))
   }
 
 
@@ -21,7 +21,7 @@ class LoginActor extends Actor {
     loggedUsers = loggedUsers - token
     None
   } else {
-    Some(ProblemS("Invalid token"))
+    Some(Problem("Invalid token"))
   }
 
 
@@ -37,10 +37,10 @@ class LoginActor extends Actor {
     case ValidateToken(token, originalSender, returnOption, returnMessage) =>
       if (loggedUsers.contains(token)) {
         if (!self.channel.tryTell(returnMessage)) {
-          returnProblem(returnOption, originalSender, ProblemS("Notice has been deleted"))
+          returnProblem(returnOption, originalSender, Problem("Notice has been deleted"))
         }
       } else {
-        returnProblem(returnOption, originalSender, ProblemS("Please log in"))
+        returnProblem(returnOption, originalSender, Problem("Please log in"))
       }
     case Login(username, password) => self reply login(username, password)
     case Logout(token) => self reply logout(token)

@@ -5,6 +5,7 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
 import java.util.concurrent.CountDownLatch
 import actors.threadpool.{TimeUnit, Executors}
+import edu.agh.lroza.scalacommon.NoticeBoardServerScala
 
 trait FunSuiteServerBeahaviors extends ShouldMatchers {
   this: FunSuite =>
