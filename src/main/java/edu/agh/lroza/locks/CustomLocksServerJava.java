@@ -59,6 +59,7 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
         }
     }
 
+    @Override
     public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {
             UUID token = UUID.randomUUID();
@@ -74,6 +75,7 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
         }
     }
 
+    @Override
     public void logout(UUID token) throws ProblemException {
         loggedUsersLock.writeLock().lock();
         try {
@@ -85,6 +87,7 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
         }
     }
 
+    @Override
     public Set<Id> listNoticesIds(UUID token) throws ProblemException {
         validateToken(token);
         noticesLock.readLock().lock();

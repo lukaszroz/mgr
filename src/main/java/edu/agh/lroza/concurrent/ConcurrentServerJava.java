@@ -51,6 +51,14 @@ public class ConcurrentServerJava implements NoticeBoardServerJava {
         }
     }
 
+
+    private void validateToken(UUID token) throws ProblemException {
+        if (!loggedUsers.containsKey(token)) {
+            throw new ProblemException("Invalid token");
+        }
+    }
+
+    @Override
     public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {
             UUID token = UUID.randomUUID();
@@ -61,71 +69,61 @@ public class ConcurrentServerJava implements NoticeBoardServerJava {
         }
     }
 
+    @Override
     public void logout(UUID token) throws ProblemException {
         if (loggedUsers.remove(token) == null) {
             throw new ProblemException("Invalid token");
         }
     }
 
+    @Override
     public Set<Id> listNoticesIds(UUID token) throws ProblemException {
-        if (loggedUsers.containsKey(token)) {
-            return ImmutableSet.copyOf(notices.keySet());
-        } else {
-            throw new ProblemException("Invalid token");
-        }
+        validateToken(token);
+        return ImmutableSet.copyOf(notices.keySet());
     }
 
     @Override
     public Id addNotice(UUID token, String title, String message) throws ProblemException {
-        if (loggedUsers.containsKey(token)) {
-            if (titleSet.putIfAbsent(title, false) == null) {
-                Id id = LongId.get();
-                notices.put(id, new Notice(title, message));
-                return id;
-            } else {
-                throw new ProblemException("Topic with title '" + title + "' already exists");
-            }
+        validateToken(token);
+        if (titleSet.putIfAbsent(title, false) == null) {
+            Id id = LongId.get();
+            notices.put(id, new Notice(title, message));
+            return id;
         } else {
-            throw new ProblemException("Invalid token");
+            throw new ProblemException("Topic with title '" + title + "' already exists");
         }
     }
 
     @Override
     public Notice getNotice(UUID token, Id id) throws ProblemException {
-        if (loggedUsers.containsKey(token)) {
-            Notice notice = notices.get(id);
-            if (notice == null) {
-                throw new ProblemException("There is no such notice '" + id + "'");
-            } else {
-                return notice;
-            }
+        validateToken(token);
+        Notice notice = notices.get(id);
+        if (notice == null) {
+            throw new ProblemException("There is no such notice '" + id + "'");
         } else {
-            throw new ProblemException("Invalid token");
+            return notice;
         }
     }
 
     @Override
     public Id updateNotice(UUID token, Id id, String title, String message) throws ProblemException {
-        if (loggedUsers.containsKey(token)) {
-            Notice oldNotice = notices.get(id);
-            if (titleSet.putIfAbsent(title, true) != null &&
-                    !(oldNotice != null && oldNotice.getTitle().equals(title) && !reserveTitle(title))) {
+        validateToken(token);
+        Notice oldNotice = notices.get(id);
+        if (titleSet.putIfAbsent(title, true) != null &&
+                !(oldNotice != null && oldNotice.getTitle().equals(title) && !reserveTitle(title))) {
+            throw new ProblemException("There is no such notice '" + id + "'");
+        } else {
+            Notice previous = notices.replace(id, new Notice(title, message));
+            if (previous == null) {
+                titleSet.remove(title);
                 throw new ProblemException("There is no such notice '" + id + "'");
             } else {
-                Notice previous = notices.replace(id, new Notice(title, message));
-                if (previous == null) {
-                    titleSet.remove(title);
-                    throw new ProblemException("There is no such notice '" + id + "'");
-                } else {
-                    titleSet.put(title, false);
-                    if (!previous.getTitle().equals(title)) {
-                        titleSet.remove(previous.getTitle());
-                    }
-                    return id;
+                titleSet.put(title, false);
+                if (!previous.getTitle().equals(title)) {
+                    titleSet.remove(previous.getTitle());
                 }
+                return id;
             }
-        } else {
-            throw new ProblemException("Invalid token");
         }
     }
 
@@ -140,16 +138,13 @@ public class ConcurrentServerJava implements NoticeBoardServerJava {
 
     @Override
     public void deleteNotice(UUID token, Id id) throws ProblemException {
-        if (loggedUsers.containsKey(token)) {
-            Notice previous = notices.remove(id);
-            if (previous == null) {
-                throw new ProblemException("There is no such notice '" + id + "'");
-            } else {
-                while (titleSet.containsKey(previous.getTitle()) && !titleSet.remove(previous.getTitle(), false)) {
-                }
-            }
+        validateToken(token);
+        Notice previous = notices.remove(id);
+        if (previous == null) {
+            throw new ProblemException("There is no such notice '" + id + "'");
         } else {
-            throw new ProblemException("Invalid token");
+            while (titleSet.containsKey(previous.getTitle()) && !titleSet.remove(previous.getTitle(), false)) {
+            }
         }
     }
 }

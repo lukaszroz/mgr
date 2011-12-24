@@ -41,7 +41,7 @@ class SynchronizedServerScala extends NoticeBoardServerScala {
 
   def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
     notices.synchronized {
-      notices.get(id).map {
+      notices.get(id) map {
         notice => if (notice.title != title && notices.contains(TitleId(title))) {
           Left(Problem("Topic with title '" + title + "' already exists"))
         } else {
@@ -51,7 +51,7 @@ class SynchronizedServerScala extends NoticeBoardServerScala {
           notices += TitleId(title) -> Notice(title, message)
           Right(TitleId(title))
         }
-      }.getOrElse(Left(Problem("There is no such notice '" + id + "'")))
+      } getOrElse Left(Problem("There is no such notice '" + id + "'"))
     }
   }
 
