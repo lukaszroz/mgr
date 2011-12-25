@@ -26,11 +26,12 @@ import edu.agh.lroza.javacommon.ProblemException;
 import scala.reflect.Manifest;
 import scala.reflect.Manifest$;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class ActorServerJava implements NoticeBoardServerJava {
     private ActorRef loginActor = Actors.actorOf(LoginActor.class);
     private ActorRef noticesActor = Actors.actorOf(new Creator<Actor>() {
         public Actor create() {
-            return new NoticesActor(loginActor);
+            return (Actor) new NoticesActor(loginActor);
         }
     });
 

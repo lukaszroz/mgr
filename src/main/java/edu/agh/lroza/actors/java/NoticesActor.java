@@ -9,8 +9,8 @@ import java.util.UUID;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.Actors;
+import akka.actor.Channel;
 import akka.actor.UntypedActor;
-import akka.actor.UntypedChannel;
 import akka.japi.Creator;
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.javacommon.Notice;
@@ -18,8 +18,9 @@ import edu.agh.lroza.javacommon.ProblemException;
 
 import com.google.common.collect.ImmutableSet;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class NoticesActor extends UntypedActor {
-    private ActorRef loginActor;
+    private Channel loginActor;
     private Set<String> titles = new HashSet<>();
     private Set<Id> ids = new HashSet<>();
 
@@ -70,9 +71,9 @@ public class NoticesActor extends UntypedActor {
     }
 
     private static class ValidatedListNoticesId implements NoticesActorMessage {
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
 
-        public ValidatedListNoticesId(UntypedChannel originalSender) {
+        public ValidatedListNoticesId(Channel originalSender) {
             this.originalSender = originalSender;
         }
 
@@ -102,10 +103,10 @@ public class NoticesActor extends UntypedActor {
     }
 
     private static class ValidatedAddNotice implements NoticesActorMessage {
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
         private final AddNotice addNotice;
 
-        public ValidatedAddNotice(UntypedChannel originalSender, AddNotice addNotice) {
+        public ValidatedAddNotice(Channel originalSender, AddNotice addNotice) {
             this.originalSender = originalSender;
             this.addNotice = addNotice;
         }
@@ -118,7 +119,7 @@ public class NoticesActor extends UntypedActor {
                 instance.titles.add(addNotice.title);
                 ActorRef actor = Actors.actorOf(new Creator<Actor>() {
                     public Actor create() {
-                        return new NoticeActor(instance.getContext(), instance.loginActor, new Notice(addNotice.title, addNotice.message));
+                        return (Actor) new NoticeActor(instance.getContext(), instance.loginActor, new Notice(addNotice.title, addNotice.message));
                     }
                 });
                 actor.start();
@@ -131,10 +132,10 @@ public class NoticesActor extends UntypedActor {
 
     static class ReserveTitle implements NoticesActorMessage {
         private final String title;
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
         private final Object message;
 
-        public ReserveTitle(String title, UntypedChannel originalSender, Object message) {
+        public ReserveTitle(String title, Channel originalSender, Object message) {
             this.title = title;
             this.originalSender = originalSender;
             this.message = message;

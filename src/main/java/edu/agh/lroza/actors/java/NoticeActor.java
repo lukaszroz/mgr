@@ -7,19 +7,26 @@ import static edu.agh.lroza.actors.java.NoticesActor.ReserveTitle;
 import java.util.UUID;
 
 import akka.actor.ActorRef;
+import akka.actor.Channel;
+import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
-import akka.actor.UntypedChannel;
+import akka.japi.Procedure;
 import edu.agh.lroza.actors.java.LoginActor.ValidateToken;
 import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.javacommon.Notice;
+import edu.agh.lroza.javacommon.ProblemException;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class NoticeActor extends UntypedActor {
-    private final ActorRef noticesActor;
-    private final ActorRef loginActor;
+    private static final ProblemException NO_SUCH_NOTICE = new ProblemException("There is no such notice");
+    private final Channel noticesActor;
+    private final Channel loginActor;
     private Notice notice;
 
     private static interface NoticeActorMessage {
         void handleMessage(NoticeActor instance);
+
+        void deletedHandleMessage(NoticeActor instance);
     }
 
     public static class GetNotice implements NoticeActorMessage {
@@ -36,18 +43,28 @@ public class NoticeActor extends UntypedActor {
             instance.loginActor.tell(new ValidateToken(token, context.channel(),
                     new ValidatedGetNotice(context.channel())), context);
         }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            instance.getContext().reply(NO_SUCH_NOTICE);
+        }
     }
 
     public static class ValidatedGetNotice implements NoticeActorMessage {
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
 
-        public ValidatedGetNotice(UntypedChannel originalSender) {
+        public ValidatedGetNotice(Channel originalSender) {
             this.originalSender = originalSender;
         }
 
         @Override
         public void handleMessage(NoticeActor instance) {
             originalSender.tell(instance.notice);
+        }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            originalSender.tell(NO_SUCH_NOTICE);
         }
     }
 
@@ -68,13 +85,18 @@ public class NoticeActor extends UntypedActor {
             instance.loginActor.tell(new ValidateToken(token, context.channel(),
                     new ValidatedTokenUpdateNotice(context.channel(), this)), context);
         }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            instance.getContext().reply(NO_SUCH_NOTICE);
+        }
     }
 
     private static class ValidatedTokenUpdateNotice implements NoticeActorMessage {
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
         private final UpdateNotice updateNotice;
 
-        public ValidatedTokenUpdateNotice(UntypedChannel originalSender, UpdateNotice updateNotice) {
+        public ValidatedTokenUpdateNotice(Channel originalSender, UpdateNotice updateNotice) {
             this.originalSender = originalSender;
             this.updateNotice = updateNotice;
         }
@@ -89,10 +111,15 @@ public class NoticeActor extends UntypedActor {
                         new ReservedTitleUpdateNotice(this)), instance.getContext());
             }
         }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            originalSender.tell(NO_SUCH_NOTICE);
+        }
     }
 
     private static class ReservedTitleUpdateNotice implements NoticeActorMessage {
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
         private final UpdateNotice updateNotice;
 
         public ReservedTitleUpdateNotice(ValidatedTokenUpdateNotice validatedTokenUpdateNotice) {
@@ -106,6 +133,12 @@ public class NoticeActor extends UntypedActor {
             instance.notice = new Notice(updateNotice.title, updateNotice.message);
             instance.noticesActor.tell(new FreeTitle(oldTitle));
             originalSender.tell(new ActorId(instance.getContext()));
+        }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            instance.noticesActor.tell(new FreeTitle(instance.notice.getTitle()));
+            originalSender.tell(NO_SUCH_NOTICE);
         }
     }
 
@@ -121,26 +154,48 @@ public class NoticeActor extends UntypedActor {
             ActorRef context = instance.getContext();
             instance.loginActor.tell(new ValidateToken(token, context.channel(),
                     new ValidatedDeleteNotice(context.channel())), context);
+
+        }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            instance.getContext().reply(new ProblemException("There is no such notice"));
         }
     }
 
     private static class ValidatedDeleteNotice implements NoticeActorMessage {
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
 
-        public ValidatedDeleteNotice(UntypedChannel originalSender) {
+        public ValidatedDeleteNotice(Channel originalSender) {
             this.originalSender = originalSender;
         }
 
         @Override
-        public void handleMessage(NoticeActor instance) {
+        public void handleMessage(final NoticeActor instance) {
             instance.noticesActor.tell(new RemoveId(new ActorId(instance.getContext())));
             instance.noticesActor.tell(new FreeTitle(instance.notice.getTitle()));
             originalSender.tell(null);
-            instance.getContext().stop();
+            instance.getContext().setReceiveTimeout(50L);
+            instance.become(new Procedure<Object>() {
+                public void apply(Object o) {
+                    if (o instanceof NoticeActorMessage) {
+                        ((NoticeActorMessage) o).deletedHandleMessage(instance);
+                    } else if (o instanceof ReceiveTimeout) {
+                        instance.getContext().stop();
+                    } else {
+                        throw new IllegalArgumentException("Unknown message: " + o);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void deletedHandleMessage(NoticeActor instance) {
+            originalSender.tell(NO_SUCH_NOTICE);
         }
     }
 
-    public NoticeActor(ActorRef noticesActor, ActorRef loginActor, Notice notice) {
+    public NoticeActor(Channel noticesActor, Channel loginActor, Notice notice) {
         this.noticesActor = noticesActor;
         this.loginActor = loginActor;
         this.notice = notice;

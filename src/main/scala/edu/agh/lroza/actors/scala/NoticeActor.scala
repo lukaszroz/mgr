@@ -1,11 +1,11 @@
 package edu.agh.lroza.actors.scala
 
 import java.util.UUID
-import akka.actor.{UntypedChannel, ActorRef, Actor}
 import edu.agh.lroza.actors.scala.LoginActor.ValidateToken
 import edu.agh.lroza.actors.scala.NoticeActor._
 import edu.agh.lroza.actors.scala.NoticesActor.{DeleteId, ReserveTitle, ActorId, FreeTitle}
-import edu.agh.lroza.scalacommon.Notice
+import edu.agh.lroza.scalacommon.{Problem, Notice}
+import akka.actor.{ReceiveTimeout, UntypedChannel, ActorRef, Actor}
 
 class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Notice) extends Actor {
 
@@ -38,7 +38,20 @@ class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Noti
       noticesActor ! DeleteId(ActorId(self))
       noticesActor ! FreeTitle(notice.title)
       originalSender ! None
-      self.stop()
+      self.receiveTimeout = Some(50L)
+      become(deletedReceive)
+  }
+
+  val deletedReceive: Receive = {
+    case DeleteNotice(_) => self.reply(Some(problemNoSuchNotice))
+    case ValidatedDeleteNotice(originalSender) => originalSender.tell(Some(problemNoSuchNotice))
+    case ValidatedUpdateNotice(originalSender, title, message) =>
+      noticesActor ! FreeTitle(title)
+      originalSender ! leftDeletedNotice
+    case ValidatedGetNotice(originalSender) => originalSender.tell(leftDeletedNotice)
+    case ValidatedTokenUpdateNotice(originalSender, _, _) => originalSender.tell(leftDeletedNotice)
+    case ReceiveTimeout => self.stop()
+    case x => self.reply(Left(problemNoSuchNotice))
   }
 }
 
@@ -58,4 +71,7 @@ object NoticeActor {
 
   private case class ValidatedDeleteNotice(originalSender: UntypedChannel)
 
+  val leftDeletedNotice = Left(Problem("Notice has been deleted"))
+
+  val problemNoSuchNotice = Problem("There is no such notice")
 }

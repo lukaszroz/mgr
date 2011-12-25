@@ -18,19 +18,19 @@ class ActorServerScala extends NoticeBoardServerScala {
   val someTimeout = Some(Problem("Timeout occured"))
 
   def login(username: String, password: String) =
-    (loginActor ? Login(username, password)).as[Either[Problem, UUID]].getOrElse(leftTimeout)
+    (loginActor ? Login(username, password)).as[Either[Problem, UUID]].get
 
-  def logout(token: UUID) = (loginActor ? Logout(token)).as[Option[Problem]].getOrElse(someTimeout)
+  def logout(token: UUID) = (loginActor ? Logout(token)).as[Option[Problem]].get
 
   def listNoticesIds(token: UUID): Either[Problem, Set[Id]] =
-    (noticesActor ? ListNoticesIds(token)).as[Either[Problem, Set[Id]]].getOrElse(leftTimeout)
+    (noticesActor ? ListNoticesIds(token)).as[Either[Problem, Set[Id]]].get
 
   def addNotice(token: UUID, title: String, message: String): Either[Problem, Id] =
-    (noticesActor ? AddNotice(token, title, message)).as[Either[Problem, Id]].getOrElse(leftTimeout)
+    (noticesActor ? AddNotice(token, title, message)).as[Either[Problem, Id]].get
 
   def getNotice(token: UUID, id: Id): Either[Problem, Notice] = id match {
     case ActorId(actorRef) =>
-      val future = Future.channel()
+      val future = Future.channel(500)
       if (actorRef.tryTell(GetNotice(token))(future)) {
         future.as[Either[Problem, Notice]].getOrElse(leftTimeout)
       } else {
@@ -41,7 +41,7 @@ class ActorServerScala extends NoticeBoardServerScala {
 
   def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id] = id match {
     case ActorId(actorRef) =>
-      val future = Future.channel()
+      val future = Future.channel(500)
       if (actorRef.tryTell(UpdateNotice(token, title, message))(future)) {
         future.as[Either[Problem, Id]].getOrElse(leftTimeout)
       } else {
@@ -52,7 +52,7 @@ class ActorServerScala extends NoticeBoardServerScala {
 
   def deleteNotice(token: UUID, id: Id): Option[Problem] = id match {
     case ActorId(actorRef) =>
-      val future = Future.channel()
+      val future = Future.channel(500)
       if (actorRef.tryTell(DeleteNotice(token))(future)) {
         future.as[Option[Problem]].getOrElse(someTimeout)
       } else {

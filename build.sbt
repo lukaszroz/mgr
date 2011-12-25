@@ -16,6 +16,8 @@ scalaVersion := "2.9.1"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
+javacOptions ++= Seq("-Xlint")
+
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 parallelExecution in IntegrationTest := false

@@ -4,10 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import akka.actor.Channel;
 import akka.actor.UntypedActor;
-import akka.actor.UntypedChannel;
 import edu.agh.lroza.javacommon.ProblemException;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class LoginActor extends UntypedActor {
     private Set<UUID> loggedUsers = new HashSet<>();
 
@@ -31,10 +32,10 @@ public class LoginActor extends UntypedActor {
 
     static class ValidateToken {
         private final UUID token;
-        private final UntypedChannel originalSender;
+        private final Channel originalSender;
         private final Object returnMessage;
 
-        ValidateToken(UUID token, UntypedChannel originalSender, Object returnMessage) {
+        ValidateToken(UUID token, Channel originalSender, Object returnMessage) {
             this.token = token;
             this.originalSender = originalSender;
             this.returnMessage = returnMessage;

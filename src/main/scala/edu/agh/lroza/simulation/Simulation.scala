@@ -123,10 +123,10 @@ object Simulation {
 
       currentResults.foreach {
         _ match {
-          case (logPrefix, duration: Long, count: Long, problemCount, addCount, updateCount) =>
+          case (logPrefix, duration: Long, count: Long, problemCount: Long, addCount, updateCount) =>
             println("%s duration: %5dms, count: %d, avg: %5.2fμs".format(logPrefix,
               TimeUnit.MICROSECONDS.toMillis(duration), count, (duration.asInstanceOf[Double]) / count))
-            println("%s %5d problems, %5d adds, %5d updates".format(logPrefix, problemCount, addCount, updateCount))
+            println("%s %5d problems (%2.2f%%), %5d adds, %5d updates".format(logPrefix, problemCount, problemCount * 100.0 / count, addCount, updateCount))
         }
       }
       println("[simulation%2d] total duration:  %6dms".format(i, duration))
