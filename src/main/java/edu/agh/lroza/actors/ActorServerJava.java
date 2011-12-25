@@ -23,12 +23,10 @@ import edu.agh.lroza.common.UtilsS;
 import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.NoticeBoardServerJava;
 import edu.agh.lroza.javacommon.ProblemException;
-import scala.reflect.Manifest;
-import scala.reflect.Manifest$;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ActorServerJava implements NoticeBoardServerJava {
-    private ActorRef loginActor = Actors.actorOf(LoginActor.class);
+    private ActorRef loginActor = Actors.actorOf((Class<? extends Actor>) LoginActor.class);
     private ActorRef noticesActor = Actors.actorOf(new Creator<Actor>() {
         public Actor create() {
             return (Actor) new NoticesActor(loginActor);
@@ -38,10 +36,6 @@ public class ActorServerJava implements NoticeBoardServerJava {
     public ActorServerJava() {
         loginActor.start();
         noticesActor.start();
-    }
-
-    private static Manifest getManifest(Class<?> clazz) {
-        return Manifest$.MODULE$.classType(clazz);
     }
 
     public UUID login(String username, String password) throws ProblemException {
