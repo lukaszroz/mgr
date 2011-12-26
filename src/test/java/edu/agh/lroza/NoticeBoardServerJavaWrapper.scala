@@ -2,10 +2,10 @@ package edu.agh.lroza
 
 import common.Id
 import javacommon.{ProblemException, NoticeBoardServerJava}
-import java.util.UUID
 import collection.JavaConversions
 import scalacommon.{Notice, Problem, NoticeBoardServerScala}
 import akka.dispatch.FutureTimeoutException
+import com.eaio.uuid.UUID
 
 class NoticeBoardServerJavaWrapper(val server: NoticeBoardServerJava) extends NoticeBoardServerScala {
   def login(username: String, password: String) = try {

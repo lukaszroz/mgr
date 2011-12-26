@@ -1,11 +1,11 @@
 package edu.agh.lroza.actors.scala
 
-import java.util.UUID
 import akka.actor.{UntypedChannel, Actor}
 import edu.agh.lroza.common.Id
 import edu.agh.lroza.actors.scala.NoticesActor._
 import edu.agh.lroza.scalacommon.{Problem, Notice}
-import edu.agh.lroza.actors.scala.LoginActor.{ActorId, NoticesMessage}
+import edu.agh.lroza.actors.scala.UserActor.{ActorId, NoticesMessage}
+import com.eaio.uuid.UUID
 
 
 class NoticesActor extends Actor {

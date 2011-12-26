@@ -3,13 +3,13 @@ package edu.agh.lroza.synchronize;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.UUID;
 
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.NoticeBoardServerJava;
 import edu.agh.lroza.javacommon.ProblemException;
 
+import com.eaio.uuid.UUID;
 import com.google.common.collect.ImmutableSet;
 
 public class SynchronizedServerJava implements NoticeBoardServerJava {
@@ -46,7 +46,7 @@ public class SynchronizedServerJava implements NoticeBoardServerJava {
     @Override
     public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {
-            UUID token = UUID.randomUUID();
+            UUID token = new UUID();
             loggedUsers.add(token);
             return token;
         } else {

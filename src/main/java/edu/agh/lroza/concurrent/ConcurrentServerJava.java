@@ -1,7 +1,6 @@
 package edu.agh.lroza.concurrent;
 
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -11,6 +10,7 @@ import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.NoticeBoardServerJava;
 import edu.agh.lroza.javacommon.ProblemException;
 
+import com.eaio.uuid.UUID;
 import com.google.common.collect.ImmutableSet;
 
 public class ConcurrentServerJava implements NoticeBoardServerJava {
@@ -61,7 +61,7 @@ public class ConcurrentServerJava implements NoticeBoardServerJava {
     @Override
     public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {
-            UUID token = UUID.randomUUID();
+            UUID token = new UUID();
             loggedUsers.put(token, o);
             return token;
         } else {

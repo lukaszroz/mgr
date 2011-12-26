@@ -4,8 +4,6 @@ import static edu.agh.lroza.actors.java.NoticesActor.FreeTitle;
 import static edu.agh.lroza.actors.java.NoticesActor.RemoveId;
 import static edu.agh.lroza.actors.java.NoticesActor.ReserveTitle;
 
-import java.util.UUID;
-
 import akka.actor.ActorRef;
 import akka.actor.Channel;
 import akka.actor.ReceiveTimeout;
@@ -15,6 +13,8 @@ import edu.agh.lroza.actors.java.LoginActor.ValidateToken;
 import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.ProblemException;
+
+import com.eaio.uuid.UUID;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class NoticeActor extends UntypedActor {

@@ -2,11 +2,12 @@ package edu.agh.lroza.actors.java;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 import akka.actor.Channel;
 import akka.actor.UntypedActor;
 import edu.agh.lroza.javacommon.ProblemException;
+
+import com.eaio.uuid.UUID;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LoginActor extends UntypedActor {
@@ -56,7 +57,7 @@ public class LoginActor extends UntypedActor {
         } else if (message instanceof Login) {
             Login login = (Login) message;
             if (login.username.equals(login.password)) {
-                UUID token = UUID.randomUUID();
+                UUID token = new UUID();
                 loggedUsers.add(token);
                 getContext().reply(token);
             } else {

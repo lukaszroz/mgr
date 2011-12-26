@@ -1,15 +1,15 @@
 package edu.agh.lroza.simulation
 
-import java.util.UUID
 import actors.Actor
 import edu.agh.lroza.simulation.ScalaUser.{Stop, Run}
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
 import edu.agh.lroza.common.Id
 import edu.agh.lroza.scalacommon.{Problem, NoticeBoardServerScala}
+import com.eaio.uuid.UUID
 
 
 class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
-  var token = UUID.randomUUID()
+  var token = new UUID()
   val logPrefix = "[client%2d]".format(number)
   var startTime, duration, count, problemCount = 0L
   var occupySum = 0D

@@ -1,9 +1,10 @@
 package edu.agh.lroza.javacommon;
 
 import java.util.Set;
-import java.util.UUID;
 
 import edu.agh.lroza.common.Id;
+
+import com.eaio.uuid.UUID;
 
 public interface NoticeBoardServerJava {
     public Id addNotice(UUID token, String title, String message) throws ProblemException;

@@ -1,9 +1,9 @@
 package edu.agh.lroza.synchronize
 
-import java.util.UUID
 import collection.mutable._
 import edu.agh.lroza.common._
 import edu.agh.lroza.scalacommon._
+import com.eaio.uuid.UUID
 
 class SynchronizedServerScala extends NoticeBoardServerScala {
   val loggedUsers = new HashSet[UUID] with SynchronizedSet[UUID]
@@ -12,7 +12,7 @@ class SynchronizedServerScala extends NoticeBoardServerScala {
   case class TitleId(id: String) extends Id
 
   def login(username: String, password: String) = if (username.equals(password)) {
-    val token = UUID.randomUUID()
+    val token = new UUID()
     loggedUsers += token
     Right(token)
   } else {

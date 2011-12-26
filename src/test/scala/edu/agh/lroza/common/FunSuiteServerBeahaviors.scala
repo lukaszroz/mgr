@@ -1,11 +1,11 @@
 package edu.agh.lroza.common
 
-import java.util.UUID
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
 import java.util.concurrent.CountDownLatch
 import actors.threadpool.{TimeUnit, Executors}
 import edu.agh.lroza.scalacommon.NoticeBoardServerScala
+import com.eaio.uuid.UUID
 
 trait FunSuiteServerBeahaviors extends ShouldMatchers {
   this: FunSuite =>
@@ -16,7 +16,7 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
     }
 
     test("should not be able to logout with wrong token") {
-      serverFactory.logout(UUID.randomUUID()) should be('defined)
+      serverFactory.logout(new UUID) should be('defined)
     }
 
     test("should be able to login and then logout") {
@@ -26,12 +26,12 @@ trait FunSuiteServerBeahaviors extends ShouldMatchers {
     }
 
     test("should not be able to list notices without login") {
-      val listNoticesIds = serverFactory.listNoticesIds(UUID.randomUUID)
+      val listNoticesIds = serverFactory.listNoticesIds(new UUID)
       listNoticesIds should be('left)
     }
 
     test("should not be able to add notice without login") {
-      serverFactory.addNotice(UUID.randomUUID, "notice1", "message1") should be('left)
+      serverFactory.addNotice(new UUID, "notice1", "message1") should be('left)
     }
 
     test("should list notices after login") {
