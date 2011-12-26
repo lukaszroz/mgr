@@ -1,13 +1,14 @@
 package edu.agh.lroza.actors.scala
 
 import java.util.UUID
-import edu.agh.lroza.actors.scala.LoginActor.ValidateToken
 import edu.agh.lroza.actors.scala.NoticeActor._
-import edu.agh.lroza.actors.scala.NoticesActor.{DeleteId, ReserveTitle, ActorId, FreeTitle}
+import edu.agh.lroza.actors.scala.NoticesActor.{DeleteId, ReserveTitle, FreeTitle}
 import edu.agh.lroza.scalacommon.{Problem, Notice}
 import akka.actor.{ReceiveTimeout, UntypedChannel, ActorRef, Actor}
+import edu.agh.lroza.common.Id
+import edu.agh.lroza.actors.scala.LoginActor.{ActorId, NoticeMessage}
 
-class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Notice) extends Actor {
+class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
 
   def updateNotice(title: String, message: String) = {
     val oldTitle = notice.title
@@ -17,39 +18,31 @@ class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Noti
   }
 
   protected def receive = {
-    case GetNotice(token) =>
-      loginActor ! ValidateToken(token, self.channel, false, ValidatedGetNotice(self.channel))
-    case ValidatedGetNotice(originalSender) =>
-      originalSender ! Right(notice)
-    case UpdateNotice(token, title, message) =>
-      loginActor ! ValidateToken(token, self.channel, false, ValidatedTokenUpdateNotice(self.channel, title, message))
-    case ValidatedTokenUpdateNotice(originalSender, title, message) =>
+    case GetNotice(_, _) =>
+      self reply Right(notice)
+    case UpdateNotice(_, _, title, message) =>
       if (title == notice.title) {
         notice = Notice(title, message)
-        originalSender tell Right(ActorId(self))
+        self reply Right(ActorId(self))
       } else {
-        noticesActor ! ReserveTitle(title, originalSender, ValidatedUpdateNotice(originalSender, title, message))
+        val channel = self.getChannel
+        noticesActor ! ReserveTitle(title, channel, ValidatedUpdateNotice(channel, title, message))
       }
     case ValidatedUpdateNotice(originalSender, title, message) =>
       originalSender ! updateNotice(title, message)
-    case DeleteNotice(token) =>
-      loginActor ! ValidateToken(token, self.channel, true, ValidatedDeleteNotice(self.channel))
-    case ValidatedDeleteNotice(originalSender) =>
+    case DeleteNotice(_, _) =>
       noticesActor ! DeleteId(ActorId(self))
       noticesActor ! FreeTitle(notice.title)
-      originalSender ! None
+      self reply None
       self.receiveTimeout = Some(50L)
       become(deletedReceive)
   }
 
   val deletedReceive: Receive = {
-    case DeleteNotice(_) => self.reply(Some(problemNoSuchNotice))
-    case ValidatedDeleteNotice(originalSender) => originalSender.tell(Some(problemNoSuchNotice))
+    case DeleteNotice(_, _) => self.reply(Some(problemNoSuchNotice))
     case ValidatedUpdateNotice(originalSender, title, message) =>
       noticesActor ! FreeTitle(title)
       originalSender ! leftDeletedNotice
-    case ValidatedGetNotice(originalSender) => originalSender.tell(leftDeletedNotice)
-    case ValidatedTokenUpdateNotice(originalSender, _, _) => originalSender.tell(leftDeletedNotice)
     case ReceiveTimeout => self.stop()
     case x => self.reply(Left(problemNoSuchNotice))
   }
@@ -57,19 +50,13 @@ class NoticeActor(noticesActor: ActorRef, loginActor: ActorRef, var notice: Noti
 
 object NoticeActor {
 
-  case class GetNotice(token: UUID)
+  case class GetNotice(override val token: UUID, override val id: Id) extends NoticeMessage(token, id)
 
-  case class UpdateNotice(token: UUID, title: String, message: String)
+  case class UpdateNotice(override val token: UUID, override val id: Id, title: String, message: String) extends NoticeMessage(token, id)
 
-  case class DeleteNotice(token: UUID)
-
-  private case class ValidatedGetNotice(originalSender: UntypedChannel)
-
-  private case class ValidatedTokenUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
+  case class DeleteNotice(override val token: UUID, override val id: Id) extends NoticeMessage(token, id)
 
   private case class ValidatedUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
-
-  private case class ValidatedDeleteNotice(originalSender: UntypedChannel)
 
   val leftDeletedNotice = Left(Problem("Notice has been deleted"))
 
