@@ -4,6 +4,7 @@ import static edu.agh.lroza.actors.java.LoginActor.ValidateToken;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import akka.actor.Actor;
 import akka.actor.ActorRef;
@@ -15,7 +16,6 @@ import edu.agh.lroza.common.Id;
 import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.ProblemException;
 
-import com.eaio.uuid.UUID;
 import com.google.common.collect.ImmutableSet;
 
 @SuppressWarnings({"unchecked", "rawtypes"})

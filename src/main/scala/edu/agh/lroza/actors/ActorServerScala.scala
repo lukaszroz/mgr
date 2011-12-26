@@ -1,65 +1,81 @@
 package edu.agh.lroza.actors
 
+import _root_.java.util.UUID
 import edu.agh.lroza.common._
-import scala.UserActor.Logout
+import akka.actor.Actor
+import scala.LoginActor.{Logout, Login}
 import scala.NoticeActor.{DeleteNotice, UpdateNotice, GetNotice}
 import scala.NoticesActor.{AddNotice, ListNoticesIds}
-import scala.{NoticesActor, UserActor}
+import scala.{NoticesActor, LoginActor}
 import edu.agh.lroza.scalacommon.{Notice, Problem, NoticeBoardServerScala}
-import akka.actor.{ActorRef, Actor, Uuid}
-import com.eaio.uuid.UUID
 
 class ActorServerScala extends NoticeBoardServerScala {
   val noticesActor = Actor.actorOf[NoticesActor].start()
+  val loginActor = Actor.actorOf(new LoginActor(noticesActor)).start()
 
   val leftTimeout = Left(Problem("Timeout occured"))
   val someTimeout = Some(Problem("Timeout occured"))
 
-  def getActor(token: UUID) = Actor.registry.actorFor(token.asInstanceOf[Uuid])
+  def login(username: String, password: String) =
+    (loginActor ? Login(username, password)).as[Either[Problem, UUID]].get
 
-  def callActor[T](token: UUID)(code: ActorRef => Either[Problem, T]) = getActor(token).map(code)
-    .getOrElse(Left(Problem("Invalid Token")))
+  def logout(token: UUID) = (loginActor ? Logout(token)).as[Option[Problem]].get
 
-  def callActorSome(token: UUID)(code: ActorRef => Option[Problem]) = getActor(token).map(code)
-    .getOrElse(Some(Problem("Invalid Token")))
+  def listNoticesIds(token: UUID): Either[Problem, Set[Id]] =
+    (loginActor ? ListNoticesIds(token)).as[Either[Problem, Set[Id]]].get
 
-  def login(username: String, password: String) = if (username.equals(password)) {
-    Right(Actor.actorOf(new UserActor(noticesActor)).start().getUuid())
-  } else {
-    Left(Problem("Wrong password"))
+  def addNotice(token: UUID, title: String, message: String): Either[Problem, Id] =
+    (loginActor ? AddNotice(token, title, message)).as[Either[Problem, Id]].get
+
+  def getNotice(token: UUID, id: Id): Either[Problem, Notice] = {
+    (loginActor ? GetNotice(token, id)).as[Either[Problem, Notice]].getOrElse(leftTimeout)
   }
 
-  def logout(token: UUID) = callActorSome(token) {
-    a =>
-      a.?(Logout).as[Option[Problem]].get
-  }
+  def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id] =
+    (loginActor ? UpdateNotice(token, id, title, message)).as[Either[Problem, Id]].getOrElse(leftTimeout)
 
-  def listNoticesIds(token: UUID): Either[Problem, Set[Id]] = callActor(token) {
-    a =>
-      (a ? ListNoticesIds(token)).as[Either[Problem, Set[Id]]].get
-    //      OrElse(Left(Problem("Invalid Token")))
-  }
+  def deleteNotice(token: UUID, id: Id): Option[Problem] =
+    (loginActor ? DeleteNotice(token, id)).get match {
+      case o: Option[_] => o.asInstanceOf[Option[Problem]]
+      case Left(p: Problem) => Some(p)
+    }
 
-  def addNotice(token: UUID, title: String, message: String): Either[Problem, Id] = callActor(token) {
-    a =>
-      (a ? AddNotice(token, title, message)).as[Either[Problem, Id]].get
-  }
+  //    case ActorId(actorRef) =>
+  //      val future = Future.channel(500)
+  //      if (actorRef.tryTell(GetNotice(token))(future)) {
+  //        future.as[Either[Problem, Notice]].getOrElse(leftTimeout)
+  //      } else {
+  //        Left(Problem("There is no such notice '" + id + "'"))
+  //      }
+  //    case _ => Left(Problem("There is no such notice '" + id + "'"))
 
-  def getNotice(token: UUID, id: Id): Either[Problem, Notice] = callActor(token) {
-    a =>
-      (a ? GetNotice(token, id)).as[Either[Problem, Notice]].getOrElse(leftTimeout)
-  }
 
-  def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id] = callActor(token) {
-    a =>
-      (a ? UpdateNotice(token, id, title, message)).as[Either[Problem, Id]].getOrElse(leftTimeout)
-  }
+  //    id match {
+  //    case ActorId(actorRef) =>
+  //      val future = Future.channel(500)
+  //      if (actorRef.tryTell(UpdateNotice(token, title, message))(future)) {
+  //        future.as[Either[Problem, Id]].getOrElse(leftTimeout)
+  //      } else {
+  //        Left(Problem("There is no such notice '" + id + "'"))
+  //      }
+  //    case _ => Left(Problem("There is no such notice '" + id + "'"))
+  //  }
 
-  def deleteNotice(token: UUID, id: Id): Option[Problem] = callActorSome(token) {
-    a =>
-      (a ? DeleteNotice(token, id)).get match {
-        case o: Option[_] => o.asInstanceOf[Option[Problem]]
-        case Left(p: Problem) => Some(p)
-      }
-  }
+  //    if (value.isInstanceOf[Option[Problem]]) {
+  //      value.asInstanceOf[Option[Problem]]
+  //    } else {
+  //      value.asInstanceOf[Either[Problem, Any]].left.toOption
+  //    }
+
+
+  //    id match {
+  //    case ActorId(actorRef) =>
+  //      val future = Future.channel(500)
+  //      if (actorRef.tryTell(DeleteNotice(token))(future)) {
+  //        future.as[Option[Problem]].getOrElse(someTimeout)
+  //      } else {
+  //        Some(Problem("There is no such notice '" + id + "'"))
+  //      }
+  //    case _ => Some(Problem("There is no such notice '" + id + "'"))
+  //  }
 }

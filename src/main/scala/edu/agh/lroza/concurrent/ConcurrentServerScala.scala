@@ -1,12 +1,12 @@
 package edu.agh.lroza.concurrent
 
+import java.util.UUID
 import edu.agh.lroza.common._
 import collection.JavaConversions.asScalaConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import java.lang.Object
 import java.util.concurrent.atomic.AtomicLong
 import edu.agh.lroza.scalacommon._
-import com.eaio.uuid.UUID
 
 
 class ConcurrentServerScala extends NoticeBoardServerScala {
@@ -24,7 +24,7 @@ class ConcurrentServerScala extends NoticeBoardServerScala {
   }
 
   def login(username: String, password: String) = if (username.equals(password)) {
-    val token = new UUID()
+    val token = UUID.randomUUID()
     loggedUsers.put(token, o)
     Right(token)
   } else {

@@ -3,6 +3,7 @@ package edu.agh.lroza.locks;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -11,7 +12,6 @@ import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.NoticeBoardServerJava;
 import edu.agh.lroza.javacommon.ProblemException;
 
-import com.eaio.uuid.UUID;
 import com.google.common.collect.ImmutableSet;
 
 public class CustomLocksServerJava implements NoticeBoardServerJava {
@@ -62,7 +62,7 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
     @Override
     public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {
-            UUID token = new UUID();
+            UUID token = UUID.randomUUID();
             loggedUsersLock.writeLock().lock();
             try {
                 loggedUsers.add(token);

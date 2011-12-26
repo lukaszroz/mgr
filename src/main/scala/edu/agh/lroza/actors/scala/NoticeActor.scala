@@ -1,12 +1,12 @@
 package edu.agh.lroza.actors.scala
 
+import java.util.UUID
 import edu.agh.lroza.actors.scala.NoticeActor._
 import edu.agh.lroza.actors.scala.NoticesActor.{DeleteId, ReserveTitle, FreeTitle}
 import edu.agh.lroza.scalacommon.{Problem, Notice}
 import akka.actor.{ReceiveTimeout, UntypedChannel, ActorRef, Actor}
 import edu.agh.lroza.common.Id
-import edu.agh.lroza.actors.scala.UserActor.{ActorId, NoticeMessage}
-import com.eaio.uuid.UUID
+import edu.agh.lroza.actors.scala.LoginActor.{ActorId, NoticeMessage}
 
 class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
 
@@ -44,7 +44,7 @@ class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
       noticesActor ! FreeTitle(title)
       originalSender ! leftDeletedNotice
     case ReceiveTimeout => self.stop()
-    case _ => self.reply(Left(problemNoSuchNotice))
+    case x => self.reply(Left(problemNoSuchNotice))
   }
 }
 

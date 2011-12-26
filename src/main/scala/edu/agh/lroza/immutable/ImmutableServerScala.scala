@@ -1,8 +1,8 @@
 package edu.agh.lroza.immutable
 
+import java.util.UUID
 import edu.agh.lroza.common._
 import edu.agh.lroza.scalacommon._
-import com.eaio.uuid.UUID
 
 class ImmutableServerScala extends NoticeBoardServerScala {
   @volatile var loggedUsers = Set[UUID]()
@@ -13,7 +13,7 @@ class ImmutableServerScala extends NoticeBoardServerScala {
   case class TitleId(id: String) extends Id
 
   def login(username: String, password: String) = if (username.equals(password)) {
-    val token = new UUID()
+    val token = UUID.randomUUID()
     loggedUsersLock.synchronized {
       loggedUsers = loggedUsers + token
     }

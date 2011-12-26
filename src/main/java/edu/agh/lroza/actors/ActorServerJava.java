@@ -1,6 +1,7 @@
 package edu.agh.lroza.actors;
 
 import java.util.Set;
+import java.util.UUID;
 
 import akka.actor.Actor;
 import akka.actor.ActorRef;
@@ -22,8 +23,6 @@ import edu.agh.lroza.common.UtilsS;
 import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.NoticeBoardServerJava;
 import edu.agh.lroza.javacommon.ProblemException;
-
-import com.eaio.uuid.UUID;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ActorServerJava implements NoticeBoardServerJava {

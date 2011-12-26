@@ -1,10 +1,10 @@
 package edu.agh.lroza.locks
 
+import java.util.UUID
 import collection.mutable._
 import edu.agh.lroza.common._
 import actors.threadpool.locks.{Lock, ReentrantReadWriteLock}
 import edu.agh.lroza.scalacommon._
-import com.eaio.uuid.UUID
 
 class CustomLocksServerScala extends NoticeBoardServerScala {
   val loggedUsers = Set[UUID]()
@@ -24,7 +24,7 @@ class CustomLocksServerScala extends NoticeBoardServerScala {
   }
 
   def login(username: String, password: String) = if (username.equals(password)) {
-    val token = new UUID()
+    val token = UUID.randomUUID()
     lock(loggedUsersLock.writeLock()) {
       loggedUsers += token
     }
