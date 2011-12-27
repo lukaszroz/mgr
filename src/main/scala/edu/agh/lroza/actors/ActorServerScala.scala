@@ -8,6 +8,7 @@ import scala.NoticeActor.{DeleteNotice, UpdateNotice, GetNotice}
 import scala.NoticesActor.{AddNotice, ListNoticesIds}
 import scala.{NoticesActor, LoginActor}
 import edu.agh.lroza.scalacommon.{Notice, Problem, NoticeBoardServerScala}
+import akka.dispatch.Future
 
 class ActorServerScala extends NoticeBoardServerScala {
   val noticesActor = Actor.actorOf[NoticesActor].start()
@@ -28,54 +29,23 @@ class ActorServerScala extends NoticeBoardServerScala {
     (loginActor ? AddNotice(token, title, message)).as[Either[Problem, Id]].get
 
   def getNotice(token: UUID, id: Id): Either[Problem, Notice] = {
-    (loginActor ? GetNotice(token, id)).as[Either[Problem, Notice]].getOrElse(leftTimeout)
+    val future = Future.channel(500)
+    loginActor.!(GetNotice(token, id))(future)
+    future.as[Either[Problem, Notice]].getOrElse(leftTimeout)
   }
 
-  def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id] =
-    (loginActor ? UpdateNotice(token, id, title, message)).as[Either[Problem, Id]].getOrElse(leftTimeout)
+  def updateNotice(token: UUID, id: Id, title: String, message: String): Either[Problem, Id] = {
+    val future = Future.channel(500)
+    loginActor.!(UpdateNotice(token, id, title, message))(future)
+    future.as[Either[Problem, Id]].getOrElse(leftTimeout)
+  }
 
-  def deleteNotice(token: UUID, id: Id): Option[Problem] =
-    (loginActor ? DeleteNotice(token, id)).get match {
+  def deleteNotice(token: UUID, id: Id): Option[Problem] = {
+    val future = Future.channel(500)
+    loginActor.!(DeleteNotice(token, id))(future)
+    future.as[Any].map {
       case o: Option[_] => o.asInstanceOf[Option[Problem]]
       case Left(p: Problem) => Some(p)
-    }
-
-  //    case ActorId(actorRef) =>
-  //      val future = Future.channel(500)
-  //      if (actorRef.tryTell(GetNotice(token))(future)) {
-  //        future.as[Either[Problem, Notice]].getOrElse(leftTimeout)
-  //      } else {
-  //        Left(Problem("There is no such notice '" + id + "'"))
-  //      }
-  //    case _ => Left(Problem("There is no such notice '" + id + "'"))
-
-
-  //    id match {
-  //    case ActorId(actorRef) =>
-  //      val future = Future.channel(500)
-  //      if (actorRef.tryTell(UpdateNotice(token, title, message))(future)) {
-  //        future.as[Either[Problem, Id]].getOrElse(leftTimeout)
-  //      } else {
-  //        Left(Problem("There is no such notice '" + id + "'"))
-  //      }
-  //    case _ => Left(Problem("There is no such notice '" + id + "'"))
-  //  }
-
-  //    if (value.isInstanceOf[Option[Problem]]) {
-  //      value.asInstanceOf[Option[Problem]]
-  //    } else {
-  //      value.asInstanceOf[Either[Problem, Any]].left.toOption
-  //    }
-
-
-  //    id match {
-  //    case ActorId(actorRef) =>
-  //      val future = Future.channel(500)
-  //      if (actorRef.tryTell(DeleteNotice(token))(future)) {
-  //        future.as[Option[Problem]].getOrElse(someTimeout)
-  //      } else {
-  //        Some(Problem("There is no such notice '" + id + "'"))
-  //      }
-  //    case _ => Some(Problem("There is no such notice '" + id + "'"))
-  //  }
+    }.getOrElse(someTimeout)
+  }
 }

@@ -23,7 +23,6 @@ class NoticesActor extends Actor {
     Right(actorId)
   }
 
-
   protected def receive = {
     case ListNoticesIds(token) =>
       self reply listNoticesIds

@@ -17,14 +17,12 @@ class LoginActor(noticesActor: ActorRef) extends Actor {
     Left(Problem("Wrong password"))
   }
 
-
   def logout(token: UUID): Option[Problem] = if (loggedUsers.contains(token)) {
     loggedUsers = loggedUsers - token
     None
   } else {
     Some(Problem("Invalid token"))
   }
-
 
   val notLogged = Left(Problem("Invalid token. Please log in."))
 
