@@ -14,8 +14,8 @@ class ActorServerScala extends NoticeBoardServerScala {
   val noticesActor = Actor.actorOf[NoticesActor].start()
   val loginActor = Actor.actorOf(new LoginActor(noticesActor)).start()
 
-  val leftTimeout = Left(Problem("Timeout occured"))
-  val someTimeout = Some(Problem("Timeout occured"))
+  val leftTimeout = Left(Problem("Timeout occurred"))
+  val someTimeout = Some(Problem("Timeout occurred"))
 
   def login(username: String, password: String) =
     (loginActor ? Login(username, password)).as[Either[Problem, UUID]].get

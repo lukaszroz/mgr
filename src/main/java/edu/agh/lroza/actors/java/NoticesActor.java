@@ -1,7 +1,5 @@
 package edu.agh.lroza.actors.java;
 
-import static edu.agh.lroza.actors.java.LoginActor.ValidateToken;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -20,11 +18,9 @@ import com.google.common.collect.ImmutableSet;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class NoticesActor extends UntypedActor {
-    private Channel loginActor;
     private Set<String> titles = new HashSet<>();
     private Set<Id> ids = new HashSet<>();
 
-    //
     public static class ActorId implements Id {
         private final ActorRef actor;
 
@@ -52,8 +48,10 @@ public class NoticesActor extends UntypedActor {
         }
     }
 
-    private static interface NoticesActorMessage {
+    static interface NoticesActorMessage {
         void handleMessage(NoticesActor instance);
+
+        UUID getToken();
     }
 
     public static class ListNoticesIds implements NoticesActorMessage {
@@ -65,21 +63,12 @@ public class NoticesActor extends UntypedActor {
 
         @Override
         public void handleMessage(NoticesActor instance) {
-            instance.loginActor.tell(new ValidateToken(token, instance.getContext().getChannel(),
-                    new ValidatedListNoticesId(instance.getContext().getChannel())), instance.getContext());
-        }
-    }
-
-    private static class ValidatedListNoticesId implements NoticesActorMessage {
-        private final Channel originalSender;
-
-        public ValidatedListNoticesId(Channel originalSender) {
-            this.originalSender = originalSender;
+            instance.getContext().reply(ImmutableSet.<Id>copyOf(instance.ids));
         }
 
         @Override
-        public void handleMessage(NoticesActor instance) {
-            originalSender.tell(ImmutableSet.<Id>copyOf(instance.ids));
+        public UUID getToken() {
+            return token;
         }
     }
 
@@ -95,38 +84,26 @@ public class NoticesActor extends UntypedActor {
         }
 
         @Override
-        public void handleMessage(NoticesActor instance) {
-            ActorRef context = instance.getContext();
-            instance.loginActor.tell(new ValidateToken(token, context.getChannel(),
-                    new ValidatedAddNotice(context.getChannel(), this)), context);
-        }
-    }
-
-    private static class ValidatedAddNotice implements NoticesActorMessage {
-        private final Channel originalSender;
-        private final AddNotice addNotice;
-
-        public ValidatedAddNotice(Channel originalSender, AddNotice addNotice) {
-            this.originalSender = originalSender;
-            this.addNotice = addNotice;
-        }
-
-        @Override
         public void handleMessage(final NoticesActor instance) {
-            if (instance.titles.contains(addNotice.title)) {
-                originalSender.tell(new ProblemException("Topic with title '" + addNotice.title + "' already exists"));
+            if (instance.titles.contains(title)) {
+                instance.getContext().reply(new ProblemException("Topic with title '" + title + "' already exists"));
             } else {
-                instance.titles.add(addNotice.title);
+                instance.titles.add(title);
                 ActorRef actor = Actors.actorOf(new Creator<Actor>() {
                     public Actor create() {
-                        return (Actor) new NoticeActor(instance.getContext(), instance.loginActor, new Notice(addNotice.title, addNotice.message));
+                        return (Actor) new NoticeActor(instance.getContext(), new Notice(title, message));
                     }
                 });
                 actor.start();
                 ActorId id = new ActorId(actor);
                 instance.ids.add(id);
-                originalSender.tell(id);
+                instance.getContext().reply(id);
             }
+        }
+
+        @Override
+        public UUID getToken() {
+            return token;
         }
     }
 
@@ -154,6 +131,11 @@ public class NoticesActor extends UntypedActor {
                 }
             }
         }
+
+        @Override
+        public UUID getToken() {
+            throw new UnsupportedOperationException("Reserved title doesn't contain token");
+        }
     }
 
     static class FreeTitle implements NoticesActorMessage {
@@ -166,6 +148,11 @@ public class NoticesActor extends UntypedActor {
         @Override
         public void handleMessage(NoticesActor instance) {
             instance.titles.remove(title);
+        }
+
+        @Override
+        public UUID getToken() {
+            throw new UnsupportedOperationException("Reserved title doesn't contain token");
         }
     }
 
@@ -180,10 +167,11 @@ public class NoticesActor extends UntypedActor {
         public void handleMessage(NoticesActor instance) {
             instance.ids.remove(id);
         }
-    }
 
-    public NoticesActor(ActorRef loginActor) {
-        this.loginActor = loginActor;
+        @Override
+        public UUID getToken() {
+            throw new UnsupportedOperationException("Reserved title doesn't contain token");
+        }
     }
 
     public void onReceive(Object message) throws Exception {

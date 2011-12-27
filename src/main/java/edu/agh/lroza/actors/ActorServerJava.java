@@ -7,6 +7,7 @@ import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.Actors;
 import akka.dispatch.ActorCompletableFuture;
+import akka.dispatch.FutureTimeoutException;
 import akka.japi.Creator;
 import edu.agh.lroza.actors.java.LoginActor;
 import edu.agh.lroza.actors.java.LoginActor.Login;
@@ -15,7 +16,6 @@ import edu.agh.lroza.actors.java.NoticeActor.DeleteNotice;
 import edu.agh.lroza.actors.java.NoticeActor.GetNotice;
 import edu.agh.lroza.actors.java.NoticeActor.UpdateNotice;
 import edu.agh.lroza.actors.java.NoticesActor;
-import edu.agh.lroza.actors.java.NoticesActor.ActorId;
 import edu.agh.lroza.actors.java.NoticesActor.AddNotice;
 import edu.agh.lroza.actors.java.NoticesActor.ListNoticesIds;
 import edu.agh.lroza.common.Id;
@@ -26,10 +26,10 @@ import edu.agh.lroza.javacommon.ProblemException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ActorServerJava implements NoticeBoardServerJava {
-    private ActorRef loginActor = Actors.actorOf((Class<? extends Actor>) LoginActor.class);
-    private ActorRef noticesActor = Actors.actorOf(new Creator<Actor>() {
+    private ActorRef noticesActor = Actors.actorOf((Class<? extends Actor>) NoticesActor.class);
+    private ActorRef loginActor = Actors.actorOf(new Creator<Actor>() {
         public Actor create() {
-            return (Actor) new NoticesActor(loginActor);
+            return (Actor) new LoginActor(noticesActor);
         }
     });
 
@@ -56,7 +56,7 @@ public class ActorServerJava implements NoticeBoardServerJava {
 
     @Override
     public Set<Id> listNoticesIds(UUID token) throws ProblemException {
-        Object response = noticesActor.ask(new ListNoticesIds(token)).get();
+        Object response = loginActor.ask(new ListNoticesIds(token)).get();
         if (response instanceof ProblemException) {
             throw (ProblemException) response;
         } else {
@@ -66,7 +66,7 @@ public class ActorServerJava implements NoticeBoardServerJava {
 
     @Override
     public Id addNotice(UUID token, String title, String message) throws ProblemException {
-        Object response = noticesActor.ask(new AddNotice(token, title, message)).get();
+        Object response = loginActor.ask(new AddNotice(token, title, message)).get();
         if (response instanceof ProblemException) {
             throw (ProblemException) response;
         } else {
@@ -76,56 +76,49 @@ public class ActorServerJava implements NoticeBoardServerJava {
 
     @Override
     public Notice getNotice(UUID token, Id id) throws ProblemException {
-        if (id instanceof ActorId) {
-            ActorCompletableFuture responseChannel = UtilsS.getFuture();
-            if (((ActorId) id).getActor().tryTell(new GetNotice(token), responseChannel)) {
-                Object response = responseChannel.get();
-                if (response instanceof ProblemException) {
-                    throw (ProblemException) response;
-                } else {
-                    return (Notice) response;
-                }
+        ActorCompletableFuture responseChannel = UtilsS.getFuture();
+        loginActor.tell(new GetNotice(token, id), responseChannel);
+        try {
+            Object response = responseChannel.get();
+            if (response instanceof ProblemException) {
+                throw (ProblemException) response;
             } else {
-                throw new ProblemException("There is no such notice '" + id + "'");
+                return (Notice) response;
             }
-        } else {
-            throw new ProblemException("There is no such notice '" + id + "'");
+        } catch (FutureTimeoutException e) {
+            throw new ProblemException("Timeout occurred", e);
         }
     }
 
     @Override
     public Id updateNotice(UUID token, Id id, String title, String message) throws ProblemException {
-        if (id instanceof ActorId) {
-            ActorCompletableFuture responseChannel = UtilsS.getFuture();
-            if (((ActorId) id).getActor().tryTell(new UpdateNotice(token, title, message), responseChannel)) {
-                Object response = responseChannel.get();
-                if (response instanceof ProblemException) {
-                    throw (ProblemException) response;
-                } else {
-                    return (Id) response;
-                }
+        ActorCompletableFuture responseChannel = UtilsS.getFuture();
+        loginActor.tell(new UpdateNotice(token, id, title, message), responseChannel);
+        try {
+            Object response = responseChannel.get();
+            if (response instanceof ProblemException) {
+                throw (ProblemException) response;
             } else {
-                throw new ProblemException("There is no such notice '" + id + "'");
+                return (Id) response;
             }
-        } else {
-            throw new ProblemException("There is no such notice '" + id + "'");
+        } catch (FutureTimeoutException e) {
+            throw new ProblemException("Timeout occurred", e);
         }
     }
 
     @Override
     public void deleteNotice(UUID token, Id id) throws ProblemException {
-        if (id instanceof ActorId) {
-            ActorCompletableFuture responseChannel = UtilsS.getFuture();
-            if (((ActorId) id).getActor().tryTell(new DeleteNotice(token), responseChannel)) {
-                Object response = responseChannel.get();
-                if (response instanceof ProblemException) {
-                    throw (ProblemException) response;
-                }
+        ActorCompletableFuture responseChannel = UtilsS.getFuture();
+        loginActor.tell(new DeleteNotice(token, id), responseChannel);
+        try {
+            Object response = responseChannel.get();
+            if (response instanceof ProblemException) {
+                throw (ProblemException) response;
             } else {
-                throw new ProblemException("There is no such notice '" + id + "'");
+                return;
             }
-        } else {
-            throw new ProblemException("There is no such notice '" + id + "'");
+        } catch (FutureTimeoutException e) {
+            throw new ProblemException("Timeout occurred", e);
         }
     }
 }

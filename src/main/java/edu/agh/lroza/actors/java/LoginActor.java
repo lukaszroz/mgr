@@ -4,13 +4,21 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import akka.actor.ActorRef;
 import akka.actor.Channel;
 import akka.actor.UntypedActor;
+import edu.agh.lroza.actors.java.NoticeActor.NoticeActorMessage;
+import edu.agh.lroza.actors.java.NoticesActor.NoticesActorMessage;
 import edu.agh.lroza.javacommon.ProblemException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LoginActor extends UntypedActor {
     private Set<UUID> loggedUsers = new HashSet<>();
+    private Channel noticesActor;
+
+    public LoginActor(ActorRef noticesActor) {
+        this.noticesActor = noticesActor;
+    }
 
     public static class Login {
         private final String username;
@@ -30,28 +38,23 @@ public class LoginActor extends UntypedActor {
         }
     }
 
-    static class ValidateToken {
-        private final UUID token;
-        private final Channel originalSender;
-        private final Object returnMessage;
-
-        ValidateToken(UUID token, Channel originalSender, Object returnMessage) {
-            this.token = token;
-            this.originalSender = originalSender;
-            this.returnMessage = returnMessage;
-        }
-    }
-
     public void onReceive(Object message) throws Exception {
-        if (message instanceof ValidateToken) {
-            ValidateToken validateToken = (ValidateToken) message;
-            if (loggedUsers.contains(validateToken.token)) {
-                boolean success = getContext().tryReply(validateToken.returnMessage);
-                if (!success) {
-                    validateToken.originalSender.tell(new ProblemException("Notice has been deleted"));
+        if (message instanceof NoticeActorMessage) {
+            NoticeActorMessage noticeMessage = (NoticeActorMessage) message;
+            if (loggedUsers.contains(noticeMessage.getToken())) {
+                Channel noticeActor = noticeMessage.getActor();
+                if (noticeActor == null || !noticeActor.tryTell(noticeMessage, getContext().getChannel())) {
+                    getContext().reply(new ProblemException("There is no such notice"));
                 }
             } else {
-                validateToken.originalSender.tell(new ProblemException("Please log in"));
+                getContext().reply(new ProblemException("Please log in"));
+            }
+        } else if (message instanceof NoticesActorMessage) {
+            NoticesActorMessage noticeMessage = (NoticesActorMessage) message;
+            if (loggedUsers.contains(noticeMessage.getToken())) {
+                noticesActor.tell(noticeMessage, getContext().getChannel());
+            } else {
+                getContext().reply(new ProblemException("Please log in"));
             }
         } else if (message instanceof Login) {
             Login login = (Login) message;
