@@ -23,17 +23,19 @@ public class NoticeActor extends UntypedActor {
     private final Channel noticesActor;
     private Notice notice;
 
-    static interface NoticeActorMessage {
-        void handleMessage(NoticeActor instance);
+    static abstract class NoticeActorMessage {
+        abstract void handleMessage(NoticeActor instance);
 
-        void deletedHandleMessage(NoticeActor instance);
+        public void deletedHandleMessage(NoticeActor instance) {
+            instance.getContext().reply(NO_SUCH_NOTICE);
+        }
 
-        UUID getToken();
+        abstract UUID getToken();
 
-        ActorRef getActor();
+        abstract ActorRef getActor();
     }
 
-    public static class GetNotice implements NoticeActorMessage {
+    public static class GetNotice extends NoticeActorMessage {
 
         private final UUID token;
         private final Id id;
@@ -46,11 +48,6 @@ public class NoticeActor extends UntypedActor {
         @Override
         public void handleMessage(NoticeActor instance) {
             instance.getContext().reply(instance.notice);
-        }
-
-        @Override
-        public void deletedHandleMessage(NoticeActor instance) {
-            instance.getContext().reply(NO_SUCH_NOTICE);
         }
 
         @Override
@@ -68,7 +65,7 @@ public class NoticeActor extends UntypedActor {
         }
     }
 
-    public static class UpdateNotice implements NoticeActorMessage {
+    public static class UpdateNotice extends NoticeActorMessage {
         private final UUID token;
         private final String title;
         private final String message;
@@ -94,11 +91,6 @@ public class NoticeActor extends UntypedActor {
         }
 
         @Override
-        public void deletedHandleMessage(NoticeActor instance) {
-            instance.getContext().reply(NO_SUCH_NOTICE);
-        }
-
-        @Override
         public UUID getToken() {
             return token;
         }
@@ -113,7 +105,7 @@ public class NoticeActor extends UntypedActor {
         }
     }
 
-    private static class ReservedTitleUpdateNotice implements NoticeActorMessage {
+    private static class ReservedTitleUpdateNotice extends NoticeActorMessage {
         private final Channel originalSender;
         private final UpdateNotice updateNotice;
 
@@ -147,7 +139,7 @@ public class NoticeActor extends UntypedActor {
         }
     }
 
-    public static class DeleteNotice implements NoticeActorMessage {
+    public static class DeleteNotice extends NoticeActorMessage {
         private final UUID token;
         private final Id id;
 
@@ -177,11 +169,6 @@ public class NoticeActor extends UntypedActor {
         }
 
         @Override
-        public void deletedHandleMessage(NoticeActor instance) {
-            instance.getContext().reply(NO_SUCH_NOTICE);
-        }
-
-        @Override
         public UUID getToken() {
             return token;
         }
@@ -201,7 +188,7 @@ public class NoticeActor extends UntypedActor {
         this.notice = notice;
     }
 
-    public void onReceive(Object message) throws Exception {
+    public void onReceive(Object message) {
         if (message instanceof NoticeActorMessage) {
             ((NoticeActorMessage) message).handleMessage(this);
         } else {

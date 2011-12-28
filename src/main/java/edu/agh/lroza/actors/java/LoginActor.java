@@ -38,7 +38,7 @@ public class LoginActor extends UntypedActor {
         }
     }
 
-    public void onReceive(Object message) throws Exception {
+    public void onReceive(Object message) {
         if (message instanceof NoticeActorMessage) {
             NoticeActorMessage noticeMessage = (NoticeActorMessage) message;
             if (loggedUsers.contains(noticeMessage.getToken())) {

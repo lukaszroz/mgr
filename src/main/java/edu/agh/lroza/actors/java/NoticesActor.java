@@ -174,7 +174,7 @@ public class NoticesActor extends UntypedActor {
         }
     }
 
-    public void onReceive(Object message) throws Exception {
+    public void onReceive(Object message) {
         if (message instanceof NoticesActorMessage) {
             ((NoticesActorMessage) message).handleMessage(this);
         } else {
