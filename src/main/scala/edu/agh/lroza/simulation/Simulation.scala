@@ -1,16 +1,18 @@
 package edu.agh.lroza.simulation
 
-import edu.agh.lroza.synchronize.SynchronizedServerScala
-import edu.agh.lroza.locks.CustomLocksServerScala
-import edu.agh.lroza.concurrent.ConcurrentServerScala
 import edu.agh.lroza.immutable.ImmutableServerScala
-import edu.agh.lroza.actors.ActorServerScala
 import org.clapper.argot.{ArgotUsageException, ArgotParser, ArgotConverters}
 import scala.Predef._
 import java.util.concurrent.{TimeUnit, CyclicBarrier}
 import java.util.Locale
 import collection.mutable.ListBuffer
 import edu.agh.lroza.scalacommon.NoticeBoardServerScala
+import edu.agh.lroza.synchronize.{SynchronizedServerJava, SynchronizedServerScala}
+import edu.agh.lroza.locks.{CustomLocksServerJava, CustomLocksServerScala}
+import edu.agh.lroza.concurrent.{ConcurrentServerJava, ConcurrentServerScala}
+import edu.agh.lroza.actors.{ActorServerJava, ActorServerScala}
+import edu.agh.lroza.javacommon.NoticeBoardServerJava
+import actors.Actor
 
 
 object Simulation {
@@ -24,7 +26,7 @@ object Simulation {
       "2011, Lukasz W. Rozycki")
   )
 
-  val server = parser.parameter[NoticeBoardServerScala]("SERVER_TYPE", """Server implemention to use. Possible values:
+  val server = parser.parameter[Any]("SERVER_TYPE", """Server implemention to use. Possible values:
   SS - SynchronizedServerScala
   SJ - SynchronizedServerJava
   LS - CustomLocksServerScala
@@ -36,14 +38,14 @@ object Simulation {
   AJ - ActorServerJava
   """, false) {
     case ("SS", _) => new SynchronizedServerScala
-    //    case ("SJ", _) => new SynchronizedServerJava
+    case ("SJ", _) => new SynchronizedServerJava
     case ("LS", _) => new CustomLocksServerScala
-    //    case ("LJ", _) => new CustomLocksServerJava
+    case ("LJ", _) => new CustomLocksServerJava
     case ("CS", _) => new ConcurrentServerScala
-    //    case ("CJ", _) => new ConcurrentServerJava
+    case ("CJ", _) => new ConcurrentServerJava
     case ("IM", _) => new ImmutableServerScala
     case ("AS", _) => new ActorServerScala
-    //    case ("AJ", _) => new ActorServerJava
+    case ("AJ", _) => new ActorServerJava
   }
 
   val full = parser.flag[Boolean](List("f", "full"), "Full simulation takes longer")
@@ -55,8 +57,8 @@ object Simulation {
   val writeEvery = parser.option[Int](List("w", "write-period"), "period", "How many read requests there is for " +
     "one write request. The higher the number, the lower whe write request frequency. Default 0 (no writes).")
 
-  def runSimulation(server: NoticeBoardServerScala) {
-    println("Starting simulation with server: " + server.getClass.getName)
+  def runSimulation(server: Either[NoticeBoardServerJava, NoticeBoardServerScala]) {
+    println("Starting simulation with server: " + server.merge.getClass.getName)
 
     val (warmup, n) = if (quick.value.getOrElse(false)) {
       (Seq(1), 1)
@@ -66,10 +68,21 @@ object Simulation {
       (Seq(1, 10), 10)
     }
 
-    val token = server.login("master", "master").right.get
-    for (i <- 1 to n * 100) {
-      server.login("a", "a")
+    val loginScala = (server: NoticeBoardServerScala) => {
+      for (i <- 1 to n * 100) {
+        server.login("a", "a")
+      }
+      server.login("master", "master").right.get
     }
+
+    val loginJava = (server: NoticeBoardServerJava) => {
+      for (i <- 1 to n * 100) {
+        server.login("a", "a")
+      }
+      server.login("master", "master")
+    }
+
+    val token = server.fold(loginJava, loginScala)
 
     var start = 0L
     val barrier = new CyclicBarrier(users.value.getOrElse(1), new Runnable {
@@ -81,14 +94,41 @@ object Simulation {
     val writePeriod = writeEvery.value.getOrElse(0)
 
     val userCount = users.value.getOrElse(1)
-    val clients = for (i <- 1 to userCount) yield new ScalaUser(server, i, barrier, writePeriod).start()
 
-    def reset() {
-      server.listNoticesIds(token).right.get.foreach(server.deleteNotice(token, _))
+    val usersScala = (server: NoticeBoardServerScala) => {
+      for (i <- 1 to userCount) yield new ScalaUser(server, i, barrier, writePeriod).start()
+    }
+
+    val usersJava = (server: NoticeBoardServerJava) => {
+      for (i <- 1 to userCount) yield new JavaUser(server, i, barrier, writePeriod).start()
+    }
+
+    val clients: Seq[Actor] = server.fold(usersJava, usersScala)
+
+    val resetScala = (server: NoticeBoardServerScala) => {
+      val iterator = server.listNoticesIds(token).right.get.iterator
+      while (iterator.hasNext) {
+        server.deleteNotice(token, iterator.next())
+      }
       for (i <- 1 to n * 100) {
         server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
       }
       System.gc()
+    }
+
+    val resetJava = (server: NoticeBoardServerJava) => {
+      val iterator = server.listNoticesIds(token).iterator()
+      while (iterator.hasNext) {
+        server.deleteNotice(token, iterator.next())
+      }
+      for (i <- 1 to n * 100) {
+        server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))
+      }
+      System.gc()
+    }
+
+    def reset() {
+      server.fold(resetJava, resetScala)
     }
 
     println("--------warmup------------------------")
@@ -97,7 +137,7 @@ object Simulation {
         reset()
         val n = if (writePeriod == 10) (j / 10) + 1 else j
         //        println("i: %d, n: %d".format(i, n))
-        clients.map(_ !! ScalaUser.Run(n)).map(_())
+        clients.map(_ !! User.Run(n)).map(_())
         Thread.sleep(100);
       }
     }
@@ -110,7 +150,7 @@ object Simulation {
       println("--------simulation:%02d------------------".format(i))
       reset()
       val nn = if (writePeriod == 10) (n / userCount * 2) else n
-      val currentResults = clients.map(_ !! ScalaUser.Run(nn)).map(_())
+      val currentResults = clients.map(_ !! User.Run(nn)).map(_())
       val duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
 
       val totalCount = currentResults.map(_ match {
@@ -143,7 +183,7 @@ object Simulation {
       runSimulation(i)
     }
 
-    clients.map(_ !! ScalaUser.Stop).foreach(f => println(f()))
+    clients.map(_ !! User.Stop).foreach(f => println(f()))
 
     akka.actor.Actor.registry.shutdownAll()
 
@@ -157,7 +197,10 @@ object Simulation {
   def main(args: Array[String]) {
     try {
       parser.parse(args)
-      runSimulation(server.value.get)
+      server.value.get match {
+        case s: NoticeBoardServerJava => runSimulation(Left(s))
+        case s: NoticeBoardServerScala => runSimulation(Right(s))
+      }
     } catch {
       case e: ArgotUsageException => println(e.message)
     }

@@ -4,11 +4,12 @@ import java.util.UUID
 import actors.Actor
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
 import edu.agh.lroza.common.Id
-import edu.agh.lroza.scalacommon.{Problem, NoticeBoardServerScala}
 import edu.agh.lroza.simulation.User.Run
+import edu.agh.lroza.javacommon.NoticeBoardServerJava
+import edu.agh.lroza.scalacommon.Problem
 
 
-class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
+class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
   var token = UUID.randomUUID()
   val logPrefix = "[client%2d]".format(number)
   var startTime, duration, count, problemCount = 0L
@@ -25,16 +26,16 @@ class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarr
 
   val addNotice: () => Unit = () => {
     addCount += 1
-    val length = server.addNotice(token, getTitle(addCount), "message" + logPrefix).fold(problem, _.toString.length())
-    postCall(length)
+    //    val length = server.addNotice(token, getTitle(addCount), "message" + logPrefix).fold(problem, _.toString.length())
+    //    postCall(length)
     nextWriteAction = updateNotice
   }
 
   val updateNotice: () => Unit = () => {
     updateCount += 1
-    val length = server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
-      .fold(problem, _.toString.length())
-    postCall(length)
+    //    val length = server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
+    //      .fold(problem, _.toString.length())
+    //    postCall(length)
     nextWriteAction = deleteNotice
   }
 
@@ -50,8 +51,8 @@ class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarr
   }
 
   val deleteNotice: () => Unit = () => {
-    val length = server.deleteNotice(token, currentId).map(problem(_)).getOrElse(1)
-    postCall(length)
+    //    val length = server.deleteNotice(token, currentId).map(problem(_)).getOrElse(1)
+    //    postCall(length)
     nextWriteAction = addNotice
   }
 
@@ -69,8 +70,8 @@ class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarr
     occupyProcessor(length)
     count += 1
     if (count % 100 == 50) {
-      server.logout(token).foreach(_ => problemCount += 1)
-      token = server.login(logPrefix, logPrefix).right.get
+      //      server.logout(token).foreach(_ => problemCount += 1)
+      //      token = server.login(logPrefix, logPrefix).right.get
       postCall(1)
       postCall(token.toString.length())
     }
@@ -81,7 +82,7 @@ class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarr
   }
 
   def end() {
-    server.logout(token).foreach(_ => problemCount += 1)
+    //    server.logout(token).foreach(_ => problemCount += 1)
     postCall(1)
     duration += TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startTime)
     if (writeEvery > 1) {
@@ -93,7 +94,7 @@ class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarr
 
   def begin() {
     startTime = System.nanoTime();
-    token = server.login(logPrefix, logPrefix).right.get
+    //    token = server.login(logPrefix, logPrefix).right.get
     postCall(token.toString.length())
   }
 
@@ -119,17 +120,16 @@ class ScalaUser(server: NoticeBoardServerScala, number: Int, barrier: CyclicBarr
           barrier.await()
           begin()
           for (i <- 1 to times) {
-            val noticesIds = server.listNoticesIds(token).right.get
-            postCall(noticesIds.toString().length())
-            for (id <- noticesIds) {
-              currentId = id
-              val length = server.getNotice(token, id).fold(problem, _.toString.length())
-              postCall(length)
-            }
+            //            val noticesIds = server.listNoticesIds(token).right.get
+            //            postCall(noticesIds.toString().length())
+            //            for (id <- noticesIds) {
+            //              currentId = id
+            //              val length = server.getNotice(token, id).fold(problem, _.toString.length())
+            //              postCall(length)
+            //            }
           }
           end();
           reply(logPrefix, duration, count, problemCount, addCount, updateCount)
       }
   }
 }
-
