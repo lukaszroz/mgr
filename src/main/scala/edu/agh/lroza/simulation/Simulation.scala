@@ -119,7 +119,7 @@ object Simulation {
     val resetJava = (server: NoticeBoardServerJava) => {
       val iterator = server.listNoticesIds(token).iterator()
       while (iterator.hasNext) {
-        server.deleteNotice(token, iterator.next())
+        server.deleteNotice(token, iterator.next)
       }
       for (i <- 1 to n * 100) {
         server.addNotice(token, "testTitle%05d".format(i), "testMessage%5d".format(i))

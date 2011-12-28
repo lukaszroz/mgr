@@ -5,8 +5,7 @@ import actors.Actor
 import java.util.concurrent.{CyclicBarrier, TimeUnit}
 import edu.agh.lroza.common.Id
 import edu.agh.lroza.simulation.User.Run
-import edu.agh.lroza.javacommon.NoticeBoardServerJava
-import edu.agh.lroza.scalacommon.Problem
+import edu.agh.lroza.javacommon.{ProblemException, NoticeBoardServerJava}
 
 
 class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrier, writeEvery: Int) extends Actor {
@@ -19,23 +18,30 @@ class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrie
 
   var nextWriteAction: () => Unit = null
 
-  def problem(p: Problem) = {
+  def problem(p: ProblemException) = {
     problemCount += 1
     -1
   }
 
   val addNotice: () => Unit = () => {
     addCount += 1
-    //    val length = server.addNotice(token, getTitle(addCount), "message" + logPrefix).fold(problem, _.toString.length())
-    //    postCall(length)
+    val length = try {
+      server.addNotice(token, getTitle(addCount), "message" + logPrefix).toString.length()
+    } catch {
+      case e: ProblemException => problem(e)
+    }
+    postCall(length)
     nextWriteAction = updateNotice
   }
 
   val updateNotice: () => Unit = () => {
     updateCount += 1
-    //    val length = server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix)
-    //      .fold(problem, _.toString.length())
-    //    postCall(length)
+    val length = try {
+      server.updateNotice(token, currentId, getTitle(updateCount), "message" + logPrefix).toString.length()
+    } catch {
+      case e: ProblemException => problem(e)
+    }
+    postCall(length)
     nextWriteAction = deleteNotice
   }
 
@@ -51,8 +57,13 @@ class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrie
   }
 
   val deleteNotice: () => Unit = () => {
-    //    val length = server.deleteNotice(token, currentId).map(problem(_)).getOrElse(1)
-    //    postCall(length)
+    val length = try {
+      server.deleteNotice(token, currentId)
+      1
+    } catch {
+      case e: ProblemException => problem(e)
+    }
+    postCall(length)
     nextWriteAction = addNotice
   }
 
@@ -70,8 +81,12 @@ class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrie
     occupyProcessor(length)
     count += 1
     if (count % 100 == 50) {
-      //      server.logout(token).foreach(_ => problemCount += 1)
-      //      token = server.login(logPrefix, logPrefix).right.get
+      try {
+        server.logout(token)
+      } catch {
+        case e: ProblemException => problemCount += 1
+      }
+      token = server.login(logPrefix, logPrefix)
       postCall(1)
       postCall(token.toString.length())
     }
@@ -82,7 +97,11 @@ class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrie
   }
 
   def end() {
-    //    server.logout(token).foreach(_ => problemCount += 1)
+    try {
+      server.logout(token)
+    } catch {
+      case e: ProblemException => problemCount += 1
+    }
     postCall(1)
     duration += TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startTime)
     if (writeEvery > 1) {
@@ -94,7 +113,7 @@ class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrie
 
   def begin() {
     startTime = System.nanoTime();
-    //    token = server.login(logPrefix, logPrefix).right.get
+    token = server.login(logPrefix, logPrefix)
     postCall(token.toString.length())
   }
 
@@ -120,13 +139,19 @@ class JavaUser(server: NoticeBoardServerJava, number: Int, barrier: CyclicBarrie
           barrier.await()
           begin()
           for (i <- 1 to times) {
-            //            val noticesIds = server.listNoticesIds(token).right.get
-            //            postCall(noticesIds.toString().length())
-            //            for (id <- noticesIds) {
-            //              currentId = id
-            //              val length = server.getNotice(token, id).fold(problem, _.toString.length())
-            //              postCall(length)
-            //            }
+            val noticesIds = server.listNoticesIds(token)
+            postCall(noticesIds.toString.length())
+            val iterator = noticesIds.iterator()
+            while (iterator.hasNext) {
+              val id = iterator.next
+              currentId = id
+              val length = try {
+                server.getNotice(token, id).toString.length()
+              } catch {
+                case e: ProblemException => problem(e)
+              }
+              postCall(length)
+            }
           }
           end();
           reply(logPrefix, duration, count, problemCount, addCount, updateCount)
