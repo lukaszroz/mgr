@@ -4,7 +4,7 @@ seq(assemblySettings: _*)
 
 jarName := "simulation.jar"
 
-mainClass in assembly := Some("edu.agh.lroza.common.Simulation")
+mainClass in assembly := Some("edu.agh.lroza.simulation.Simulation")
 
 test in assembly := {}
 

@@ -25,21 +25,21 @@ class SynchronizedServerScala extends NoticeBoardServerScala {
     Some(Problem("Invalid token"))
   }
 
-  def listNoticesIds(token: UUID) = validateTokenEither(token) {
+  def listNoticesIds(token: UUID) = validateToken(token) {
     Right(notices.keySet.toSet)
   }
 
-  def addNotice(token: UUID, title: String, message: String) = validateTokenEither(token) {
+  def addNotice(token: UUID, title: String, message: String) = validateToken(token) {
     val notice = Notice(title, message)
     val stored = notices.getOrElseUpdate(TitleId(title), notice)
     Either.cond(notice.equals(stored), TitleId(title), Problem("Topic with title '" + title + "' already exists"))
   }
 
-  def getNotice(token: UUID, id: Id) = validateTokenEither(token) {
+  def getNotice(token: UUID, id: Id) = validateToken(token) {
     notices.get(id).map(Right(_)).getOrElse(Left(Problem("There is no such notice '" + id + "'")))
   }
 
-  def updateNotice(token: UUID, id: Id, title: String, message: String) = validateTokenEither(token) {
+  def updateNotice(token: UUID, id: Id, title: String, message: String) = validateToken(token) {
     notices.synchronized {
       notices.get(id) map {
         notice => if (notice.title != title && notices.contains(TitleId(title))) {
@@ -65,7 +65,7 @@ class SynchronizedServerScala extends NoticeBoardServerScala {
     }
   }
 
-  private def validateTokenEither[T](token: UUID)(code: => Either[Problem, T]) = if (!loggedUsers.contains(token)) {
+  private def validateToken[T](token: UUID)(code: => Either[Problem, T]) = if (!loggedUsers.contains(token)) {
     Left(Problem("Invalid token"))
   } else {
     code

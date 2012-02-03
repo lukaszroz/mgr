@@ -3,6 +3,8 @@ package edu.agh.lroza.synchronize;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import edu.agh.lroza.common.Id;
@@ -13,8 +15,8 @@ import edu.agh.lroza.javacommon.ProblemException;
 import com.google.common.collect.ImmutableSet;
 
 public class SynchronizedServerJava implements NoticeBoardServerJava {
-    private java.util.Set<UUID> loggedUsers = Collections.synchronizedSet(new HashSet<UUID>());
-    private java.util.Map<Id, Notice> notices = Collections.synchronizedMap(new HashMap<Id, Notice>());
+    private Set<UUID> loggedUsers = Collections.synchronizedSet(new HashSet<UUID>());
+    private Map<Id, Notice> notices = Collections.synchronizedMap(new HashMap<Id, Notice>());
 
     private static class TitleId implements Id {
         private final String title;
