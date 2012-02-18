@@ -7,8 +7,6 @@ import java.util.UUID;
 import akka.actor.ActorRef;
 import akka.actor.Channel;
 import akka.actor.UntypedActor;
-import edu.agh.lroza.actors.java.NoticeActor.NoticeActorMessage;
-import edu.agh.lroza.actors.java.NoticesActor.NoticesActorMessage;
 import edu.agh.lroza.javacommon.ProblemException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -18,24 +16,6 @@ public class LoginActor extends UntypedActor {
 
     public LoginActor(ActorRef noticesActor) {
         this.noticesActor = noticesActor;
-    }
-
-    public static class Login {
-        private final String username;
-        private final String password;
-
-        public Login(String username, String password) {
-            this.username = username;
-            this.password = password;
-        }
-    }
-
-    public static class Logout {
-        private final UUID token;
-
-        public Logout(UUID token) {
-            this.token = token;
-        }
     }
 
     public void onReceive(Object message) {
@@ -58,7 +38,7 @@ public class LoginActor extends UntypedActor {
             }
         } else if (message instanceof Login) {
             Login login = (Login) message;
-            if (login.username.equals(login.password)) {
+            if (login.getUsername().equals(login.getPassword())) {
                 UUID token = UUID.randomUUID();
                 loggedUsers.add(token);
                 getContext().reply(token);
@@ -67,8 +47,8 @@ public class LoginActor extends UntypedActor {
             }
         } else if (message instanceof Logout) {
             Logout logout = (Logout) message;
-            if (loggedUsers.contains(logout.token)) {
-                loggedUsers.remove(logout.token);
+            if (loggedUsers.contains(logout.getToken())) {
+                loggedUsers.remove(logout.getToken());
                 getContext().reply(null);
             } else {
                 getContext().reply(new ProblemException("Invalid token"));

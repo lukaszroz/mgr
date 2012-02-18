@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import edu.agh.lroza.common.Id;
 import edu.agh.lroza.javacommon.Notice;
@@ -18,38 +17,6 @@ public class ConcurrentServerJava implements NoticeBoardServerJava {
     private ConcurrentMap<UUID, Object> loggedUsers = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Boolean> titleSet = new ConcurrentHashMap<>();
     private ConcurrentMap<Id, Notice> notices = new ConcurrentHashMap<>();
-
-    private static class LongId implements Id {
-        private static final AtomicLong generator = new AtomicLong();
-        private final Long id;
-
-        public static Id get() {
-            return new LongId(generator.getAndIncrement());
-        }
-
-        private LongId(Long id) {
-            this.id = id;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof LongId) {
-                return ((LongId) obj).id.equals(id);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return id.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "LongId(" + id + ")";
-        }
-    }
 
 
     private void validateToken(UUID token) throws ProblemException {

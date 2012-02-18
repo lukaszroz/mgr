@@ -1,12 +1,8 @@
 package edu.agh.lroza.actors.scala
 
-import java.util.UUID
-import edu.agh.lroza.actors.scala.NoticeActor._
-import edu.agh.lroza.actors.scala.NoticesActor.{DeleteId, ReserveTitle, FreeTitle}
-import edu.agh.lroza.scalacommon.{Problem, Notice}
-import akka.actor.{ReceiveTimeout, UntypedChannel, ActorRef, Actor}
-import edu.agh.lroza.common.Id
-import edu.agh.lroza.actors.scala.LoginActor.{ActorId, NoticeMessage}
+import edu.agh.lroza.actors.scala.Messages._
+import edu.agh.lroza.scalacommon.Notice
+import akka.actor.{ReceiveTimeout, ActorRef, Actor}
 
 class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
 
@@ -46,19 +42,4 @@ class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
     case ReceiveTimeout => self.stop()
     case x => self.reply(Left(problemNoSuchNotice))
   }
-}
-
-object NoticeActor {
-
-  case class GetNotice(override val token: UUID, override val id: Id) extends NoticeMessage(token, id)
-
-  case class UpdateNotice(override val token: UUID, override val id: Id, title: String, message: String) extends NoticeMessage(token, id)
-
-  case class DeleteNotice(override val token: UUID, override val id: Id) extends NoticeMessage(token, id)
-
-  private case class ValidatedUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
-
-  val leftDeletedNotice = Left(Problem("Notice has been deleted"))
-
-  val problemNoSuchNotice = Problem("There is no such notice")
 }

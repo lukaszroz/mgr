@@ -1,11 +1,9 @@
 package edu.agh.lroza.actors.scala
 
-import java.util.UUID
-import akka.actor.{UntypedChannel, Actor}
+import akka.actor.Actor
 import edu.agh.lroza.common.Id
-import edu.agh.lroza.actors.scala.NoticesActor._
+import edu.agh.lroza.actors.scala.Messages._
 import edu.agh.lroza.scalacommon.{Problem, Notice}
-import edu.agh.lroza.actors.scala.LoginActor.{ActorId, NoticesMessage}
 
 
 class NoticesActor extends Actor {
@@ -35,7 +33,7 @@ class NoticesActor extends Actor {
         titles = titles + title
         if (!self.channel.tryTell(message)) {
           titles = titles - title
-          originalSender ! Left(Problem("Notice has been deleted"))
+          originalSender ! leftDeletedNotice
         }
       }
     case FreeTitle(title) =>
@@ -43,18 +41,4 @@ class NoticesActor extends Actor {
     case DeleteId(id) =>
       ids = ids - id
   }
-}
-
-object NoticesActor {
-
-  case class ListNoticesIds(override val token: UUID) extends NoticesMessage(token)
-
-  case class AddNotice(override val token: UUID, title: String, message: String) extends NoticesMessage(token)
-
-  private[actors] case class ReserveTitle(title: String, originalSender: UntypedChannel, returnMessage: AnyRef)
-
-  private[actors] case class FreeTitle(title: String)
-
-  private[actors] case class DeleteId(id: ActorId)
-
 }

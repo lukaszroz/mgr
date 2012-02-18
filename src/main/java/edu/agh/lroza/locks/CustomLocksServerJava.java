@@ -21,33 +21,6 @@ public class CustomLocksServerJava implements NoticeBoardServerJava {
     private ReadWriteLock loggedUsersLock = new ReentrantReadWriteLock();
     private ReadWriteLock noticesLock = new ReentrantReadWriteLock();
 
-    private static class TitleId implements Id {
-        private final String title;
-
-        public TitleId(String title) {
-            this.title = title;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof TitleId) {
-                return ((TitleId) obj).title.equals(title);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return title.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "TitleId(" + title + ")";
-        }
-    }
-
     private void validateToken(UUID token) throws ProblemException {
         loggedUsersLock.readLock().lock();
         try {

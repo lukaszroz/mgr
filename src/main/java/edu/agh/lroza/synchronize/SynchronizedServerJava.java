@@ -18,33 +18,6 @@ public class SynchronizedServerJava implements NoticeBoardServerJava {
     private Set<UUID> loggedUsers = Collections.synchronizedSet(new HashSet<UUID>());
     private Map<Id, Notice> notices = Collections.synchronizedMap(new HashMap<Id, Notice>());
 
-    private static class TitleId implements Id {
-        private final String title;
-
-        public TitleId(String title) {
-            this.title = title;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof TitleId) {
-                return ((TitleId) obj).title.equals(title);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return title.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "TitleId(" + title + ")";
-        }
-    }
-
     @Override
     public UUID login(String username, String password) throws ProblemException {
         if (username.equals(password)) {

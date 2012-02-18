@@ -3,8 +3,7 @@ package edu.agh.lroza.actors.scala
 import java.util.UUID
 import edu.agh.lroza.scalacommon.Problem
 import akka.actor.{ActorRef, Actor}
-import edu.agh.lroza.common.Id
-import edu.agh.lroza.actors.scala.LoginActor._
+import edu.agh.lroza.actors.scala.Messages._
 
 class LoginActor(noticesActor: ActorRef) extends Actor {
   var loggedUsers = Set[UUID]()
@@ -40,7 +39,7 @@ class LoginActor(noticesActor: ActorRef) extends Actor {
     }
     case message@NoticeMessage(token, ActorId(noticeActor)) => validateToken(token) {
       if (!noticeActor.tryTell(message)(self.getChannel)) {
-        self reply Left(Problem("Notice has been deleted"))
+        self reply leftDeletedNotice
       }
     }
     case NoticeMessage(token, id) => validateToken(token) {
@@ -49,26 +48,4 @@ class LoginActor(noticesActor: ActorRef) extends Actor {
     case Login(username, password) => self reply login(username, password)
     case Logout(token) => self reply logout(token)
   }
-}
-
-object LoginActor {
-
-  case class Login(username: String, password: String);
-
-  case class Logout(token: UUID);
-
-  private[actors] case class ActorId(actor: ActorRef) extends Id
-
-  class NoticesMessage(val token: UUID);
-
-  object NoticesMessage {
-    def unapply(m: NoticesMessage): Some[UUID] = Some(m.token)
-  }
-
-  class NoticeMessage(val token: UUID, val id: Id);
-
-  object NoticeMessage {
-    def unapply(m: NoticeMessage): Some[(UUID, Id)] = Some(m.token, m.id)
-  }
-
 }
