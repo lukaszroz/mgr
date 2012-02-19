@@ -3,7 +3,7 @@ package edu.agh.lroza.actors
 import _root_.java.util.UUID
 import edu.agh.lroza.common._
 import akka.actor.Actor
-import edu.agh.lroza.actors.scala.Messages._
+import edu.agh.lroza.actors.scala.Classes._
 import scala.{NoticesActor, LoginActor}
 import edu.agh.lroza.scalacommon.{Notice, Problem, NoticeBoardServerScala}
 import akka.dispatch.Future

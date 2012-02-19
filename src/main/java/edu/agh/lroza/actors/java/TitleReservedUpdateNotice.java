@@ -7,11 +7,12 @@ import akka.actor.Channel;
 import edu.agh.lroza.javacommon.Notice;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-class ReservedTitleUpdateNotice extends NoticeActorMessage {
+class TitleReservedUpdateNotice extends NoticeActorMessage {
     private final Channel originalSender;
     private final UpdateNotice updateNotice;
 
-    ReservedTitleUpdateNotice(Channel originalSender, UpdateNotice updateNotice) {
+    TitleReservedUpdateNotice(Channel originalSender, UpdateNotice updateNotice) {
+        super(null);
         this.originalSender = originalSender;
         this.updateNotice = updateNotice;
     }

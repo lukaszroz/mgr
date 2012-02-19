@@ -11,6 +11,7 @@ import edu.agh.lroza.common.Id;
 import edu.agh.lroza.javacommon.Notice;
 import edu.agh.lroza.javacommon.NoticeBoardServerJava;
 import edu.agh.lroza.javacommon.ProblemException;
+import edu.agh.lroza.javacommon.TitleId;
 
 import com.google.common.collect.ImmutableSet;
 

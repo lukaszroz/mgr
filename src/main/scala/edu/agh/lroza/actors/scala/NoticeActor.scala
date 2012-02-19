@@ -1,6 +1,6 @@
 package edu.agh.lroza.actors.scala
 
-import edu.agh.lroza.actors.scala.Messages._
+import edu.agh.lroza.actors.scala.Classes._
 import edu.agh.lroza.scalacommon.Notice
 import akka.actor.{ReceiveTimeout, ActorRef, Actor}
 
@@ -22,9 +22,9 @@ class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
         self reply Right(ActorId(self))
       } else {
         val channel = self.getChannel
-        noticesActor ! ReserveTitle(title, channel, ValidatedUpdateNotice(channel, title, message))
+        noticesActor ! ReserveTitle(title, channel, TitleReservedUpdateNotice(channel, title, message))
       }
-    case ValidatedUpdateNotice(originalSender, title, message) =>
+    case TitleReservedUpdateNotice(originalSender, title, message) =>
       originalSender ! updateNotice(title, message)
     case DeleteNotice(_, _) =>
       noticesActor ! DeleteId(ActorId(self))
@@ -36,7 +36,7 @@ class NoticeActor(noticesActor: ActorRef, var notice: Notice) extends Actor {
 
   val deletedReceive: Receive = {
     case DeleteNotice(_, _) => self.reply(Some(problemNoSuchNotice))
-    case ValidatedUpdateNotice(originalSender, title, message) =>
+    case TitleReservedUpdateNotice(originalSender, title, message) =>
       noticesActor ! FreeTitle(title)
       originalSender ! leftDeletedNotice
     case ReceiveTimeout => self.stop()

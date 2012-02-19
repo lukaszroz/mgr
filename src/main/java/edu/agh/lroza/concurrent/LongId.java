@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import edu.agh.lroza.common.Id;
 
-class LongId implements Id {
+public class LongId implements Id {
     private static final AtomicLong generator = new AtomicLong();
     private final Long id;
 

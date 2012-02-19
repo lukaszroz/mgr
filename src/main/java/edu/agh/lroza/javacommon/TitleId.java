@@ -1,8 +1,8 @@
-package edu.agh.lroza.locks;
+package edu.agh.lroza.javacommon;
 
 import edu.agh.lroza.common.Id;
 
-class TitleId implements Id {
+public class TitleId implements Id {
     private final String title;
 
     public TitleId(String title) {

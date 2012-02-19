@@ -2,7 +2,6 @@ package edu.agh.lroza.actors.java;
 
 import java.util.UUID;
 
-import akka.actor.ActorRef;
 import akka.actor.ReceiveTimeout$;
 import akka.japi.Procedure;
 import edu.agh.lroza.common.Id;
@@ -10,11 +9,10 @@ import edu.agh.lroza.common.Id;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DeleteNotice extends NoticeActorMessage {
     private final UUID token;
-    private final Id id;
 
     public DeleteNotice(UUID token, Id id) {
+        super(id);
         this.token = token;
-        this.id = id;
     }
 
     @Override
@@ -40,14 +38,5 @@ public class DeleteNotice extends NoticeActorMessage {
     @Override
     public UUID getToken() {
         return token;
-    }
-
-    @Override
-    public ActorRef getActor() {
-        if (id instanceof ActorId) {
-            return ((ActorId) id).getActor();
-        } else {
-            return null;
-        }
     }
 }

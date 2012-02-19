@@ -2,7 +2,7 @@ package edu.agh.lroza.actors.scala
 
 import akka.actor.Actor
 import edu.agh.lroza.common.Id
-import edu.agh.lroza.actors.scala.Messages._
+import edu.agh.lroza.actors.scala.Classes._
 import edu.agh.lroza.scalacommon.{Problem, Notice}
 
 

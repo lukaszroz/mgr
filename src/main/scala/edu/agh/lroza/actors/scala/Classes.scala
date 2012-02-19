@@ -5,7 +5,7 @@ import edu.agh.lroza.common.Id
 import akka.actor.{UntypedChannel, ActorRef}
 import edu.agh.lroza.scalacommon.Problem
 
-object Messages {
+object Classes {
 
   case class Login(username: String, password: String);
 
@@ -34,13 +34,7 @@ object Messages {
     def unapply(m: NoticeMessage): Some[(UUID, Id)] = Some(m.token, m.id)
   }
 
-  private[actors] case class ActorId(actor: ActorRef) extends Id
-
-  private[actors] case class ValidatedUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
-
-  private[actors] val leftDeletedNotice = Left(Problem("Notice has been deleted"))
-
-  private[actors] val problemNoSuchNotice = Problem("There is no such notice")
+  private[actors] case class TitleReservedUpdateNotice(originalSender: UntypedChannel, title: String, message: String)
 
   private[actors] case class ReserveTitle(title: String, originalSender: UntypedChannel, returnMessage: AnyRef)
 
@@ -48,4 +42,10 @@ object Messages {
 
   private[actors] case class DeleteId(id: ActorId)
 
+
+  private[actors] case class ActorId(actor: ActorRef) extends Id
+
+  private[actors] val leftDeletedNotice = Left(Problem("Notice has been deleted"))
+
+  private[actors] val problemNoSuchNotice = Problem("There is no such notice")
 }

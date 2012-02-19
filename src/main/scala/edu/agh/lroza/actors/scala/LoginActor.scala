@@ -3,7 +3,7 @@ package edu.agh.lroza.actors.scala
 import java.util.UUID
 import edu.agh.lroza.scalacommon.Problem
 import akka.actor.{ActorRef, Actor}
-import edu.agh.lroza.actors.scala.Messages._
+import edu.agh.lroza.actors.scala.Classes._
 
 class LoginActor(noticesActor: ActorRef) extends Actor {
   var loggedUsers = Set[UUID]()
