@@ -5,7 +5,6 @@ import edu.agh.lroza.common._
 import collection.JavaConversions.asScalaConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import java.lang.Object
-import java.util.concurrent.atomic.AtomicLong
 import edu.agh.lroza.scalacommon._
 
 
@@ -14,14 +13,6 @@ class ConcurrentServerScala extends NoticeBoardServerScala {
   val loggedUsers = asScalaConcurrentMap(new ConcurrentHashMap[UUID, Object]())
   val titleSet = asScalaConcurrentMap(new ConcurrentHashMap[String, Boolean]())
   val notices = asScalaConcurrentMap(new ConcurrentHashMap[Id, Notice]())
-
-  case class LongId(id: Long) extends Id
-
-  object LongId {
-    private val generator = new AtomicLong();
-
-    def apply(): Id = LongId(generator.getAndIncrement)
-  }
 
   def login(username: String, password: String) = if (username.equals(password)) {
     val token = UUID.randomUUID()

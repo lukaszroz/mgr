@@ -10,8 +10,6 @@ class ImmutableServerScala extends NoticeBoardServerScala {
   @volatile var notices = Map[Id, Notice]()
   val noticesLock = new Object
 
-  case class TitleId(id: String) extends Id
-
   def login(username: String, password: String) = if (username.equals(password)) {
     val token = UUID.randomUUID()
     loggedUsersLock.synchronized {

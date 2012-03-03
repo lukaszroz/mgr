@@ -16,6 +16,11 @@ scalaVersion := "2.9.1"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
+// not supported from scala 2.8
+// scalacOptions in doc ++= Seq("--access:private")
+
+sources in(Compile, doc) ~= (_ filter (_.getName endsWith ".scala") filterNot (_.getAbsolutePath contains "simulation"))
+
 javacOptions ++= Seq("-Xlint")
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"

@@ -12,8 +12,6 @@ class CustomLocksServerScala extends NoticeBoardServerScala {
   val loggedUsersLock = new ReentrantReadWriteLock
   val noticesLock = new ReentrantReadWriteLock
 
-  case class TitleId(id: String) extends Id
-
   private def lock[T](lock: Lock)(code: => T): T = {
     lock.lock()
     try {

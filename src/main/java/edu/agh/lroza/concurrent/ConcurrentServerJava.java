@@ -53,7 +53,7 @@ public class ConcurrentServerJava implements NoticeBoardServerJava {
     public Id addNotice(UUID token, String title, String message) throws ProblemException {
         validateToken(token);
         if (titleSet.putIfAbsent(title, false) == null) {
-            Id id = LongId.get();
+            Id id = LongIdJ.get();
             notices.put(id, new Notice(title, message));
             return id;
         } else {

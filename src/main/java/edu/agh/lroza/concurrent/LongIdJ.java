@@ -4,22 +4,22 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import edu.agh.lroza.common.Id;
 
-public class LongId implements Id {
+public class LongIdJ implements Id {
     private static final AtomicLong generator = new AtomicLong();
     private final Long id;
 
     public static Id get() {
-        return new LongId(generator.getAndIncrement());
+        return new LongIdJ(generator.getAndIncrement());
     }
 
-    LongId(Long id) {
+    LongIdJ(Long id) {
         this.id = id;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof LongId) {
-            return ((LongId) obj).id.equals(id);
+        if (obj instanceof LongIdJ) {
+            return ((LongIdJ) obj).id.equals(id);
         } else {
             return false;
         }

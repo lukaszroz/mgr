@@ -9,8 +9,6 @@ class SynchronizedServerScala extends NoticeBoardServerScala {
   val loggedUsers = new HashSet[UUID] with SynchronizedSet[UUID]
   val notices = new HashMap[Id, Notice] with SynchronizedMap[Id, Notice]
 
-  case class TitleId(id: String) extends Id
-
   def login(username: String, password: String) = if (username.equals(password)) {
     val token = UUID.randomUUID()
     loggedUsers += token
